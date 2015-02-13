@@ -1,0 +1,8 @@
+RewriteEngine on
+
+RewriteCond $1 !^(404\.php|asset|index\.php|robots\.txt)
+RewriteRule ^(.*)$ /index.php/$1 [L]
+
+RewriteCond %{SCRIPT_FILENAME} !404.php
+RewriteCond %{SCRIPT_FILENAME} !-f
+RewriteRule ^(.*)$ /404.php [NC,L]
