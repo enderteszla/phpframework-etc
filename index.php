@@ -54,5 +54,5 @@ call_user_func_array(array($controllerInstance,$method),$args);
 Output::getInstance()
 	->setDataType(Input::getInstance()->getValue('dataType'))
 	->addErrors($controllerInstance->errors())
-	->setSource($controllerInstance->getResult())
+	->setSource(array_merge($data,$controllerInstance->getResult()))
 	->expose(VIEW_PATH . strtolower($controller) . "/$method.php");
