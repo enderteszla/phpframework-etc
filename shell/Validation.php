@@ -35,39 +35,19 @@ class Validation {
 				$rules = $this->rules[$this->table];
 		}
 		foreach ($data as $key => &$value) {
-			switch(true){
-				case !array_key_exists($key,$rules):
-					unset($data[ $key ]);
-					break;
-				case is_array($rules[$key]) && is_array($value):
-					foreach($value as $i => &$element){
-						if(!in_array($element,$rules[$key])) {
-							unset($value[$i]);
-						}
+			if(!array_key_exists($key,$rules)) {
+				unset($data[ $key ]);
+			} elseif(is_array($value)){
+				foreach($value as $i => &$element){
+					if(!call_user_func_array(array($this,$rules[$key]),array(&$element))) {
+						unset($value[$i]);
 					}
-					if(empty($value)){
-						$this->addError("Validation Error (1): Array value for field '$key' has no valid elements");
-					}
-					break;
-				case is_array($rules[$key]):
-					if(!in_array($value,$rules[$key])) {
-						$this->addError("Validation Error (2): Field '$key' has invalid value");
-					}
-					break;
-				case is_array($value):
-					foreach($value as $i => &$element){
-						if(!call_user_func_array(array($this,$rules[$key]),array(&$element))) {
-							unset($value[$i]);
-						}
-					}
-					if(empty($value)){
-						$this->addError("Validation Error (1): Array value for field '$key' has no valid elements");
-					}
-					break;
-				case !call_user_func_array(array($this,$rules[$key]),array(&$value)):
-					$this->addError("Validation Error (2): Field '$key' has invalid value");
-					break;
-				default:
+				}
+				if(empty($value)){
+					$this->addError("Validation Error (1): Array value for field '$key' has no valid elements");
+				}
+			} elseif(!call_user_func_array(array($this,$rules[$key]),array(&$value))) {
+				$this->addError("Validation Error (2): Field '$key' has invalid value");
 			}
 		}
 		switch($mode){
@@ -87,22 +67,11 @@ class Validation {
 		}
 		return $this;
 	}
-	public function processID($ids){
-		if(is_array($ids)){
-			$returnArray = true;
-		} else {
-			$returnArray = false;
-			$ids = array($ids);
-		}
-		foreach($ids as $i => &$id){
-			if(!call_user_func_array(array($this,'_id'),array(&$id))){
-				unset($ids[$i]);
-			}
-		}
-		if(empty($ids)){
+	public function processID($id){
+		if(!call_user_func_array(array($this,'_id'),array(&$id))){
 			$this->addError("Validation Error (5): ID has invalid value");
 		} else {
-			$this->result = $returnArray ? $ids : $ids[0];
+			$this->result = $id;
 		}
 		return $this;
 	}
@@ -114,9 +83,6 @@ class Validation {
 	}
 
 	private function _id(&$field) {
-		if(is_null($field)){
-			return true;
-		}
 		$field = (preg_match("/^\d+$/","$field",$m)) ? $m[0] : 0;
 		return settype($field,'int') && $field > 0;
 	}
