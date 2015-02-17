@@ -4,12 +4,14 @@ define('DEFAULT_CONTROLLER',"Main");
 define('DEFAULT_METHOD',"index");
 
 define('SHELL_PATH',BASE_PATH . '/shell/');
-define('CONTROLLER_PATH',BASE_PATH . '/controller/');
 define('CONFIG_PATH',BASE_PATH . '/config/');
+define('CONTROLLER_PATH',BASE_PATH . '/controller/');
+define('LANG_PATH',BASE_PATH . '/lang/');
 define('VIEW_PATH',BASE_PATH . '/view/');
 
 require_once SHELL_PATH . 'Common.php';
 require_once SHELL_PATH . 'Input.php';
+require_once SHELL_PATH . 'Lang.php';
 require_once SHELL_PATH . 'Output.php';
 require_once CONTROLLER_PATH . 'Token.php';
 require_once CONTROLLER_PATH . 'User.php';
@@ -37,7 +39,7 @@ if(!method_exists($controllerInstance,$method)){
 $data = array();
 /* <Data for="header"> */
 if(!empty(Token::getInstance()->get(Input::getInstance()->getValue('token'),'Content')->errors())) {
-	$controllerInstance->addErrors(array("Authentication Error (0): Token doesn't exist"));
+	$controllerInstance->addError('authentication',0);
 }
 if(Token::getInstance()->checkAuthorization()->errors()){
 	Token::getInstance()->flushErrors();

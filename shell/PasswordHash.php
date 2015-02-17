@@ -108,9 +108,9 @@ class PasswordHash {
 	private function pbkdf2($algorithm, $password, $salt, $count, $key_length, $raw_output = false){
 		$algorithm = strtolower($algorithm);
 		if(!in_array($algorithm, hash_algos(), true))
-			$this->addError('PBKDF2 ERROR: Invalid hash algorithm.');
+			$this->addError('pbkdf2',0);
 		if($count <= 0 || $key_length <= 0)
-			$this->addError('PBKDF2 ERROR: Invalid parameters.');
+			$this->addError('pbkdf2',1);
 
 		if (function_exists("hash_pbkdf2")) {
 			// The output length is in NIBBLES (4-bits) if $raw_output is false!

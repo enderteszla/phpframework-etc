@@ -5,7 +5,7 @@ class Token {
 
 	public function checkAuthorization(){
 		if(is_null($this->result[0]['UserID']) || $this->result[0]['Type'] != 'session'){
-			return $this->addError("Authentication Error (1): User must be authorized to perform this action");
+			return $this->addError('authentication',1);
 		}
 		return $this;
 	}

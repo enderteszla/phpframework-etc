@@ -61,4 +61,21 @@ class Output {
 		ob_start();
 		return $this->view($view)->setSource(ob_get_clean())->json();
 	}
+	private function viewReturned($view){
+		if($this->_errorsNumber){
+			return $this;
+		}
+		if(!is_array($this->source)){
+			return $this->addError('output',0);
+		}
+		if(!is_file($view)) {
+			return $this->addError('output',1);
+		}
+		foreach($this->source as $key => $value){
+			$$key = $value;
+		}
+		ob_start();
+		include $view;
+		return $this->setResult(ob_get_clean());
+	}
 }

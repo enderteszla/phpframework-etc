@@ -17,7 +17,7 @@ class Validation {
 
 	public function setTable($table){
 		if(!array_key_exists($table,$this->rules)){
-			$this->addError("Validation Error (0): No validation rule for '$table' class");
+			$this->addError('validation',0,array($table));
 		} else {
 			$this->table = $table;
 		}
@@ -46,12 +46,12 @@ class Validation {
 						}
 					}
 					if(empty($value)){
-						$this->addError("Validation Error (1): Array value for field '$key' has no valid elements");
+						$this->addError('validation',1,array($key));
 					}
 					break;
 				case is_array($rules[$key]):
 					if(!in_array($value,$rules[$key])) {
-						$this->addError("Validation Error (2): Field '$key' has invalid value");
+						$this->addError('validation',2,array($key));
 					}
 					break;
 				case is_array($value):
@@ -61,11 +61,11 @@ class Validation {
 						}
 					}
 					if(empty($value)){
-						$this->addError("Validation Error (1): Array value for field '$key' has no valid elements");
+						$this->addError('validation',1,array($key));
 					}
 					break;
 				case !call_user_func_array(array($this,$rules[$key]),array(&$value)):
-					$this->addError("Validation Error (2): Field '$key' has invalid value");
+					$this->addError('validation',2,array($key));
 					break;
 				default:
 			}
@@ -73,13 +73,13 @@ class Validation {
 		switch($mode){
 			case 'non-empty':
 				if(empty($data)){
-					$this->addError("Validation Error (3): Empty request");
+					$this->addError('validation',3);
 				}
 				break;
 			case 'required':
 				foreach (array_keys($rules) as $key) {
 					if (!array_key_exists($key, $data)) {
-						$this->addError("Validation Error (4): Field '$key' required");
+						$this->addError('validation',4,array($key));
 					}
 				}
 				break;
@@ -100,7 +100,7 @@ class Validation {
 			}
 		}
 		if(empty($ids)){
-			$this->addError("Validation Error (5): ID has invalid value");
+			$this->addError('validation',5);
 		} else {
 			$this->result = $returnArray ? $ids : $ids[0];
 		}
@@ -108,7 +108,7 @@ class Validation {
 	}
 	public function processLocale($lang){
 		if(!in_array($lang,$this->locales)){
-			$this->addError("Validation Error (6): Invalid locale");
+			$this->addError('validation',6);
 		}
 		return $this;
 	}

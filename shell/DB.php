@@ -12,7 +12,7 @@ class DB {
 		include_once CONFIG_PATH . 'DB.php';
 		$this->link = new mysqli($DB['host'],$DB['user'],$DB['password'],$DB['db']);
 		if($this->link->connect_error){
-			$this->addError("Connect Error ({$this->link->connect_errno}): {$this->link->connect_error}");
+			$this->addError('connection',$this->link->connect_errno,$this->link->connect_error);
 		}
 	}
 
@@ -36,7 +36,7 @@ class DB {
 		unset($data['ID']);
 		$update = $this->prepareQuery('update',$data);
 		if(!($res = $this->link->query("INSERT INTO $into VALUES $values ON DUPLICATE KEY UPDATE $update;"))){
-			return $this->addError("Unsuccessful Insert/Update Error ({$this->link->errno}): {$this->link->error}");
+			return $this->addError('insert/update',$this->link->errno,$this->link->error);
 		}
 		$id = ($id == 0) ? $this->link->insert_id : $id;
 		if($lang){
@@ -48,7 +48,7 @@ class DB {
 			unset($dataLang['Lang']);
 			$update = $this->prepareQuery('update',$dataLang);
 			if(!($res = $this->link->query("INSERT INTO $into VALUES $values ON DUPLICATE KEY UPDATE $update;"))){
-				return $this->addError("Unsuccessful Insert/Update Error ({$this->link->errno}): {$this->link->error}");
+				return $this->addError('insert/update',$this->link->errno,$this->link->error);
 			}
 		}
 		return $this->get($table,$lang,$id);
@@ -64,7 +64,7 @@ class DB {
 		}
 		if(!$this->addErrors(Validation::getInstance()->processID($ids)->putResult($ids)->errors())->_errorsNumber){
 			if(!($res = $this->link->query("UPDATE `{$table}` SET `{$field}` = $value WHERE `ID` IN(" . implode(',',$ids) . ");"))){
-				return $this->addError("Unsuccessful Set Error ({$this->link->errno}): {$this->link->error}");
+				return $this->addError('set',$this->link->errno,$this->link->error);
 			}
 		}
 		return $this;
@@ -99,11 +99,11 @@ class DB {
 		$from = "`$table`" . (($lang !== false) ? " JOIN `{$table}Lang` ON(`{$table}Lang`.`{$table}ID` = `{$table}`.`ID`)" : "");
 		$where = is_null($filter) ? "" : "WHERE " . implode(' AND ',array_map(function($k,$v){return is_null($v) ? "`$k` IS NULL" : (is_array($v) ? "`$k` IN('" . implode('\',\'',$v) . "')" : "`$k` = '$v'");},array_keys($filter),array_values($filter)));
 		if(!($res = $this->link->query("SELECT $select FROM $from $where;"))){
-			return $this->addError("Unsuccessful Select Error ({$this->link->errno}): {$this->link->error}");
+			return $this->addError('select',$this->link->errno,$this->link->error);
 		}
 		if(is_array($filter) && array_key_exists('ID',$filter)){
 			if($res->num_rows == 0){
-				return $this->addError("Unsuccessful Select Error (0): Object '$table' with ID = {$filter['ID']} doesn't exist");
+				return $this->addError('select',0,array($table,$filter['ID']));
 			}
 			$this->result = $res->fetch_assoc();
 		} else {
@@ -124,7 +124,7 @@ class DB {
 		}
 		if(!$this->addErrors(Validation::getInstance()->processID($ids)->putResult($ids)->errors())->_errorsNumber){
 			if(!($res = $this->link->query("DELETE FROM `{$table}` WHERE `ID` IN(" . implode(',',$ids) . ");"))){
-				return $this->addError("Unsuccessful Drop Error ({$this->link->errno}): {$this->link->error}");
+				return $this->addError('drop',$this->link->errno,$this->link->error);
 			}
 		}
 		return $this;

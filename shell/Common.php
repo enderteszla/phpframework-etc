@@ -22,8 +22,8 @@ trait Shell {
 	public function errors(){
 		return $this->_errors;
 	}
-	public function addError($message){
-		$this->_errors[] = $message;
+	public function addError($key,$code,$details = array()){
+		$this->_errors[] = Lang::getInstance()->getError($key,$code,$details);
 		$this->_errorsNumber ++;
 		return $this;
 	}
@@ -34,6 +34,10 @@ trait Shell {
 	}
 	public function putResult(&$to){
 		$to = $this->result;
+		return $this;
+	}
+	private function setResult($result){
+		$this->result = $result;
 		return $this;
 	}
 	public function getResult(){
