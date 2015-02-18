@@ -6,6 +6,7 @@ define('DEFAULT_METHOD',"index");
 define('SHELL_PATH',BASE_PATH . '/shell/');
 define('CONFIG_PATH',BASE_PATH . '/config/');
 define('CONTROLLER_PATH',BASE_PATH . '/controller/');
+define('HELPER_PATH',BASE_PATH . '/helper/');
 define('LANG_PATH',BASE_PATH . '/lang/');
 define('VIEW_PATH',BASE_PATH . '/view/');
 
@@ -13,6 +14,7 @@ require_once SHELL_PATH . 'Common.php';
 require_once SHELL_PATH . 'Input.php';
 require_once SHELL_PATH . 'Lang.php';
 require_once SHELL_PATH . 'Output.php';
+require_once HELPER_PATH . 'Lang.php';
 require_once CONTROLLER_PATH . 'Token.php';
 require_once CONTROLLER_PATH . 'User.php';
 
@@ -57,4 +59,6 @@ Output::getInstance()
 	->setDataType(Input::getInstance()->getValue('dataType'))
 	->addErrors($controllerInstance->errors())
 	->setSource(array_merge($data,$controllerInstance->getResult()))
-	->expose(VIEW_PATH . strtolower($controller) . "/$method.php");
+#	->expose(VIEW_PATH . strtolower($controller) . "/$method.php");
+#   Временная мера; вскорости будет устранена
+	->expose(VIEW_PATH . Input::getInstance()->getValue('lang') . '/' . strtolower($controller) . "/$method.php");
