@@ -23,7 +23,7 @@ class Lang {
 			((array_key_exists($key,$this->_vars[$type])) ? $this->_vars[$type][$key] : false),$args);
 	}
 	public function getError($key,$code,$details = array()){
-		return "{$this->_vars['error'][$key]} ({$code}):" . (is_array($details) ? vsprintf($this->_vars['error'][$key][$code],$details) : $details);
+		return "{$this->_vars['error'][$key]['name']} ({$code}):" . (is_array($details) ? vsprintf($this->_vars['error'][$key][$code],$details) : $details);
 	}
 	public function setValue($key,$value){
 		$this->_vars[$key] = $value;
