@@ -14,6 +14,7 @@ class DB {
 		if($this->link->connect_error){
 			$this->addError('connection',$this->link->connect_errno,$this->link->connect_error);
 		}
+		$this->link->set_charset("utf8");
 	}
 
 	public function upsert($table,$lang = false,$data = null,$id = null){

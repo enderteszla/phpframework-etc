@@ -54,7 +54,7 @@ class Output {
 				'data' => $this->source
 			);
 		}
-		echo json_encode($data);
+		echo json_encode($data,JSON_UNESCAPED_UNICODE);
 		return $this;
 	}
 	private function viewInJson($view){
