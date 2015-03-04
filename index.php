@@ -40,13 +40,13 @@ if(!method_exists($controllerInstance,$method)){
 
 $data = array();
 /* <Data for="header"> */
-if(!empty(Token::getInstance()->get(Input::getInstance()->getValue('token'),'Content')->errors())) {
+if(!empty(Token::getInstance()->_get(Input::getInstance()->getValue('token'),'Content')->errors())) {
 	$controllerInstance->addError('authentication',0);
 }
 if(Token::getInstance()->checkAuthorization()->errors()){
 	Token::getInstance()->flushErrors();
 } else {
-	User::getInstance()->get(Token::getInstance()->getResult()[0]['UserID'])->putResult($data['_user']);
+	User::getInstance()->_get(Token::getInstance()->getResult()[0]['UserID'])->putResult($data['_user']);
 }
 /* </Data for="header"> */
 
