@@ -19,10 +19,10 @@ class User {
 		$password = Input::getInstance()->getValue('password');
 		$firstName = Input::getInstance()->getValue('firstName');
 		$lastName = Input::getInstance()->getValue('lastName');
-		if(!empty($this->get($email,'Email')->result)){
+		if(!empty($this->_get($email,'Email')->result)){
 			return $this->addError('registration',0);
 		}
-		if($this->upsert(array(
+		if($this->_upsert(array(
 			'Email' => $email,
 			'Password' => PasswordHash::getInstance()->create_hash($password),
 			'FirstName' => $firstName,
@@ -50,7 +50,7 @@ class User {
 		}
 		$email = Input::getInstance()->getValue('email');
 		$password = Input::getInstance()->getValue('password');
-		if($this->get($email,'Email',true)->_errorsNumber || empty($this->result)){
+		if($this->_get($email,'Email',true)->_errorsNumber || empty($this->result)){
 			return $this->addError('authentication',3);
 		}
 		if(!PasswordHash::getInstance()->validate_password($password,$this->result[0]['Password'])){
@@ -84,10 +84,10 @@ class User {
 			))->putResult($token)->errors()) || is_null($token)) {
 			return $this->addError('activation',0);
 		}
-		if($this->set($token[0]['UserID'])->_errorsNumber){
+		if($this->_set($token[0]['UserID'])->_errorsNumber){
 			return $this;
 		}
-		$this->result = $this->get($token[0]['UserID']);
+		$this->result = $this->_get($token[0]['UserID']);
 		return $this->addErrors(Token::getInstance()->drop($token[0]['ID'])->errors());
 	}
 	public function restorePassword($content = null){
@@ -99,11 +99,11 @@ class User {
 				))->putResult($token)->errors()) || is_null($token)) {
 				return $this->addError('password restoration',0);
 			}
-			$this->get(Token::getInstance()->getResult()[0]['UserID']);
+			$this->_get(Token::getInstance()->getResult()[0]['UserID']);
 			if(!Input::getInstance()->getValue('json')) {
 				return $this;
 			}
-			if($this->upsert(array(
+			if($this->_upsert(array(
 				'Email' => $this->result['Email'],
 				'Password' => PasswordHash::getInstance()->create_hash(Input::getInstance()->getValue('password')),
 				'FirstName' => $this->result['FirstName'],
@@ -119,7 +119,7 @@ class User {
 			return $this;
 		}
 		$email = Input::getInstance()->getValue('email');
-		if($this->get($email,'Email',true)->_errorsNumber || empty($this->result)){
+		if($this->_get($email,'Email',true)->_errorsNumber || empty($this->result)){
 			return $this->addError('password restoration',1);
 		}
 		if($this->addErrors(Token::getInstance()->upsert(array(

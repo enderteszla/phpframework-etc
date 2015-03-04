@@ -61,20 +61,20 @@ trait Controller {
 		return $this;
 	}
 
-	public function setLang($lang){
+	public function _setLang($lang){
 		$this->lang = $lang;
 		return $this;
 	}
-	public function upsert($data = null, $id = null){
+	public function _upsert($data = null, $id = null){
 		return $this->addErrors(DB::getInstance()->upsert($this->type, $this->lang, $data, $id)->putResult($this->result)->errors());
 	}
-	public function set($ids,$value = true,$field = 'Active'){
+	public function _set($ids,$value = true,$field = 'Active'){
 		return $this->addErrors(DB::getInstance()->set($this->type, $ids, $value, $field)->errors());
 	}
-	public function get($filter = null,$key = null,$checkActive = false){
+	public function _get($filter = null,$key = null,$checkActive = false){
 		return $this->addErrors(DB::getInstance()->get($this->type, $this->lang, $filter, $key, $checkActive)->putResult($this->result)->errors());
 	}
-	public function drop($ids){
+	public function _drop($ids){
 		if(method_exists($this,'preDrop')){
 			call_user_func(array($this,'preDrop'),$ids);
 			if($this->_errorsNumber){
@@ -83,7 +83,7 @@ trait Controller {
 		}
 		return $this->addErrors(DB::getInstance()->drop($this->type, $ids)->errors());
 	}
-	public function find($key,$value){
+	public function _find($key,$value){
 		foreach ($this->result as $element) {
 			if($element[$key] == $value){
 				return $element;

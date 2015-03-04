@@ -22,6 +22,11 @@ $Lang['error']['email'] = array(
 	'name'  => "Email Module Error",
 	0       => "Template doesn't exist"
 );
+$Lang['error']['image'] = array(
+	'name'  => "Image processing library error",
+	0       => "File not uploaded, please retry.",
+	1       => "Uploaded file is not a valid jpeg/jpg/gif/png image, please retry."
+);
 $Lang['error']['insert/update'] = array(
 	'name'  => "Insert/Update Error"
 );

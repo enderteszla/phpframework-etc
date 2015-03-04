@@ -12,7 +12,7 @@ class Token {
 	public function generate(){
 		do {
 			$token = md5(uniqid(mt_rand(), true));
-		} while(!is_null($this->get($token,'Content')->result));
+		} while(!is_null($this->_get($token,'Content')->result));
 		return $token;
 	}
 }
