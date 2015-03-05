@@ -14,6 +14,7 @@ require_once SHELL_PATH . 'Common.php';
 require_once SHELL_PATH . 'Input.php';
 require_once SHELL_PATH . 'Lang.php';
 require_once SHELL_PATH . 'Output.php';
+require_once HELPER_PATH . 'Array.php';
 require_once HELPER_PATH . 'Lang.php';
 require_once CONTROLLER_PATH . 'Token.php';
 require_once CONTROLLER_PATH . 'User.php';

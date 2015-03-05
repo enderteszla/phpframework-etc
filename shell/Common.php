@@ -91,4 +91,39 @@ trait Controller {
 		}
 		return null;
 	}
+	public function _fetchImages(){
+		if(is_assoc($this->result)){
+			$ids = array_keys(array_intersect_key(
+				$this->result,
+				array_fill_keys(preg_grep('/^ImageID\d+$/',array_keys($this->result)),true)
+			));
+		} else {
+			$ids = array();
+			foreach($this->result as $element){
+				$ids = array_unique(array_merge($ids, array_keys(array_intersect_key(
+					$this->result,
+					array_fill_keys(preg_grep('/^ImageID\d+$/',array_keys($element)),true)
+				))));
+			}
+		}
+		DB::getInstance()->get('Image',false,$ids)->makeIndexedArray()->putResult($images);
+		if(is_assoc($this->result)){
+			foreach(preg_grep('/^ImageID\d+$/',array_keys($this->result)) as $key){
+				$n = str_replace('ImageID','',$key);
+				foreach($images[$this->result[$key]] as $k => $v){
+					$this->result["Image$k$n"] = $v;
+				}
+			}
+		} else {
+			foreach($this->result as &$element){
+				foreach(preg_grep('/^ImageID\d+$/',array_keys($element)) as $key){
+					$n = str_replace('ImageID','',$key);
+					foreach($images[$element[$key]] as $k => $v){
+						$element["Image$k$n"] = $v;
+					}
+				}
+			}
+		}
+		return $this;
+	}
 }

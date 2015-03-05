@@ -13,7 +13,7 @@ class Image {
 		$this->config = $Image;
 	}
 
-	public function create($owner_type = 'default',$id = 0,$finalize = true){
+	public function _create($owner_type = 'default',$id = 0,$finalize = true){
 		if(!in_array($owner_type,array_keys($this->config['filters']))){
 			$owner_type = 'default';
 		}
@@ -24,7 +24,7 @@ class Image {
 			->finalize($finalize);
 	}
 
-	public function remove($ids){
+	public function _remove($ids){
 		switch(true){
 			case is_array($ids):
 				break;
