@@ -71,8 +71,9 @@ class DB {
 		return $this;
 	}
 	public function get($table,$lang = false,$filter = null,$key = null,$checkActive = false){
+		$this->result = null;
 		if(!is_null($filter)) {
-			if (!is_array($filter)) {
+			if (!is_array($filter) || !is_assoc($filter)) {
 				if(is_null($key)){
 					$key = 'ID';
 				}
@@ -102,7 +103,7 @@ class DB {
 		if(!($res = $this->link->query("SELECT $select FROM $from $where;"))){
 			return $this->addError('select',$this->link->errno,$this->link->error);
 		}
-		if(is_array($filter) && array_key_exists('ID',$filter)){
+		if(is_array($filter) && array_key_exists('ID',$filter) && !is_array($filter['ID'])){
 			if($res->num_rows == 0){
 				return $this->addError('select',0,array($table,$filter['ID']));
 			}
