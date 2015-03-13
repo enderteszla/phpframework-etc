@@ -8,26 +8,34 @@ class Lang {
 	private $_loaded = null;
 
 	private function __init(){
-		$this->_lang = Input::getInstance()->getValue('lang') . '/';
+		$this->_lang = input('lang') . '/';
 		$this->_loaded = array();
 		$this->_vars = array();
-		$Lang = array();
-		include LANG_PATH . $this->_lang . "Default.php";
-		include LANG_PATH . $this->_lang . "Error.php";
-		$this->_vars = $Lang;
+		$this->load('Error');
 	}
 
 	public function getValue($key,$type = null,$args = array()){
-		return vsprintf(is_null($type) ?
-			((array_key_exists($key,$this->_vars)) ? $this->_vars[$key] : false) :
-			((array_key_exists($key,$this->_vars[$type])) ? $this->_vars[$type][$key] : false),$args);
+		switch(true){
+			case is_null($type):
+				$types = array();
+				break;
+			case is_array($type):
+				$types = $type;
+				break;
+			default:
+				$types = array($type);
+		}
+		$vars = $this->_vars;
+		foreach($types as $type){
+			if(!array_key_exists($type,$vars)){
+				return false;
+			}
+			$vars = $vars[$type];
+		}
+		return array_key_exists($key,$vars) ? vsprintf($vars[$key],$args) : false;
 	}
 	public function getError($key,$code,$details = array()){
-		return "{$this->_vars['error'][$key]['name']} ({$code}):" . (is_array($details) ? vsprintf($this->_vars['error'][$key][$code],$details) : $details);
-	}
-	public function setValue($key,$value){
-		$this->_vars[$key] = $value;
-		return $this;
+		return "{$this->_vars['Error'][$key]['name']} ({$code}):" . (is_array($details) ? vsprintf($this->_vars['Error'][$key][$code],$details) : $details);
 	}
 	public function load($type){
 		if(!in_array($type,$this->_loaded) && is_file(LANG_PATH . $this->_lang . $type . ".php")){

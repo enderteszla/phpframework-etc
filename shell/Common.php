@@ -58,6 +58,7 @@ trait Controller {
 
 	private function __init(){
 		$this->type = get_class($this);
+		Lang::getInstance()->load($this->type);
 		return $this;
 	}
 
@@ -74,14 +75,16 @@ trait Controller {
 	public function _get($filter = null,$key = null,$checkActive = false){
 		return $this->addErrors(DB::getInstance()->get($this->type, $this->lang, $filter, $key, $checkActive)->putResult($this->result)->errors());
 	}
-	public function _drop($ids){
-		if(method_exists($this,'preDrop')){
-			call_user_func(array($this,'preDrop'),$ids);
-			if($this->_errorsNumber){
-				return $this;
-			}
+	public function _drop(){
+		if(empty($this->result)){
+			return $this;
 		}
-		return $this->addErrors(DB::getInstance()->drop($this->type, $ids)->errors());
+		if(is_assoc($this->result)){
+			$ids = array($this->result['ID']);
+		} else {
+			$ids = array_map(function($i){return $i['ID'];},$this->result);
+		}
+		return $this->addErrors(DB::getInstance()->drop($this->type, $ids,$this->lang)->errors());
 	}
 	public function _find($key,$value){
 		foreach ($this->result as $element) {
@@ -96,9 +99,9 @@ trait Controller {
 			return $this;
 		}
 		if(is_assoc($this->result)){
-			$ids = array_keys(array_intersect_key(
+			$ids = array_values(array_intersect_key(
 				$this->result,
-				array_fill_keys(preg_grep('/^ImageID\d+$/',array_keys($this->result)),true)
+				array_fill_keys(preg_grep('/^ImageID\d*$/',array_keys($this->result)),true)
 			));
 		} else {
 			$ids = array();
@@ -111,7 +114,7 @@ trait Controller {
 		}
 		DB::getInstance()->get('Image',false,$ids)->makeIndexedArray()->putResult($images);
 		if(is_assoc($this->result)){
-			foreach(preg_grep('/^ImageID\d+$/',array_keys($this->result)) as $key){
+			foreach(preg_grep('/^ImageID\d*$/',array_keys($this->result)) as $key){
 				$n = str_replace('ImageID','',$key);
 				if(!is_null($this->result[$key])) {
 					foreach ($images[ $this->result[ $key ] ] as $k => $v) {
@@ -132,5 +135,25 @@ trait Controller {
 			}
 		}
 		return $this;
+	}
+	public function _dropImages(){
+		if(empty($this->result)){
+			return $this;
+		}
+		if(is_assoc($this->result)){
+			$ids = array_values(array_intersect_key(
+				$this->result,
+				array_fill_keys(preg_grep('/^ImageID\d*$/',array_keys($this->result)),true)
+			));
+		} else {
+			$ids = array();
+			foreach($this->result as $element){
+				$ids = array_unique(array_merge($ids, array_values(array_intersect_key(
+					$element,
+					array_fill_keys(preg_grep('/^ImageID\d*$/',array_keys($element)),true)
+				))));
+			}
+		}
+		return $this->addErrors(Image::getInstance()->remove($ids)->errors());
 	}
 }

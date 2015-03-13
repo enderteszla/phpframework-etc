@@ -1,9 +1,8 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-$Image['file_index'] = 'file-upload';
-$Image['contentPath'] = BASE_PATH . "/content/";
-$Image['filters'] = array(
-	'default' => array(
+$Config['contentPath'] = "/content/";
+$Config['filters'] = array(
+	'Default' => array(
 		'w' => "*",
 		'h' => "*",
 		'ext' => "png",

@@ -10,15 +10,14 @@ class User {
 		return $this->setResult(array());
 	}
 	public function register(){
-		Lang::getInstance()->load('User');
-		if(!Input::getInstance()->getValue('json')){
+		if(!input('json')){
 			$this->result = array();
 			return $this;
 		}
-		$email = Input::getInstance()->getValue('email');
-		$password = Input::getInstance()->getValue('password');
-		$firstName = Input::getInstance()->getValue('firstName');
-		$lastName = Input::getInstance()->getValue('lastName');
+		$email = input('email');
+		$password = input('password');
+		$firstName = input('firstName');
+		$lastName = input('lastName');
 		if(!empty($this->_get($email,'Email')->result)){
 			return $this->addError('registration',0);
 		}
@@ -45,11 +44,11 @@ class User {
 		return $this;
 	}
 	public function login(){
-		if(!Input::getInstance()->getValue('json')){
+		if(!input('json')){
 			include BASE_PATH . '/404.php';
 		}
-		$email = Input::getInstance()->getValue('email');
-		$password = Input::getInstance()->getValue('password');
+		$email = input('email');
+		$password = input('password');
 		if($this->_get($email,'Email',true)->_errorsNumber || empty($this->result)){
 			return $this->addError('authentication',3);
 		}
@@ -66,7 +65,7 @@ class User {
 		return $this;
 	}
 	public function logout(){
-		if(!Input::getInstance()->getValue('json')){
+		if(!input('json')){
 			include BASE_PATH . '/404.php';
 		}
 		if(is_null(Token::getInstance()->getResult()[0]['UserID']) || (Token::getInstance()->getResult()[0]['Type'] != 'session')) {
@@ -91,7 +90,6 @@ class User {
 		return $this->addErrors(Token::getInstance()->_drop($token[0]['ID'])->errors());
 	}
 	public function restorePassword($content = null){
-		Lang::getInstance()->load('User');
 		if(!is_null($content)){
 			if(!empty(Token::getInstance()->_get(array(
 					'Content' => $content,
@@ -100,12 +98,12 @@ class User {
 				return $this->addError('password restoration',0);
 			}
 			$this->_get(Token::getInstance()->getResult()[0]['UserID']);
-			if(!Input::getInstance()->getValue('json')) {
+			if(!input('json')) {
 				return $this;
 			}
 			if($this->_upsert(array(
 				'Email' => $this->result['Email'],
-				'Password' => PasswordHash::getInstance()->create_hash(Input::getInstance()->getValue('password')),
+				'Password' => PasswordHash::getInstance()->create_hash(input('password')),
 				'FirstName' => $this->result['FirstName'],
 				'LastName' => $this->result['LastName']
 			))->_errorsNumber){
@@ -114,11 +112,11 @@ class User {
 			$this->addErrors(Token::getInstance()->_drop($token[0]['ID'])->errors())->result = Lang::getInstance()->getValue('passwordReset','User');
 			return $this;
 		}
-		if(!Input::getInstance()->getValue('json')) {
+		if(!input('json')) {
 			$this->result = array();
 			return $this;
 		}
-		$email = Input::getInstance()->getValue('email');
+		$email = input('email');
 		if($this->_get($email,'Email',true)->_errorsNumber || empty($this->result)){
 			return $this->addError('password restoration',1);
 		}

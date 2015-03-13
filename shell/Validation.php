@@ -5,14 +5,10 @@ class Validation {
 
 	private $table = null;
 	private $rules = null;
-	private $locales = null;
 
 	public function __init(){
-		$Validation = array();
-		$locales = array();
-		require_once CONFIG_PATH . 'Validation.php';
-		$this->rules = $Validation;
-		$this->locales = $locales;
+		Config::getInstance()->load('Validation');
+		$this->rules = config('Validation');
 	}
 
 	public function setTable($table){
@@ -51,7 +47,7 @@ class Validation {
 					break;
 				case is_array($rules[$key]):
 					if(!in_array($value,$rules[$key])) {
-						$this->addError('validation',2,array($key));
+						$this->addError('validation',2,array($key,stringify($value)));
 					}
 					break;
 				case is_array($value):
@@ -65,7 +61,7 @@ class Validation {
 					}
 					break;
 				case !call_user_func_array(array($this,$rules[$key]),array(&$value)):
-					$this->addError('validation',2,array($key));
+					$this->addError('validation',2,array($key,stringify($value)));
 					break;
 				default:
 			}
@@ -100,14 +96,14 @@ class Validation {
 			}
 		}
 		if(empty($ids)){
-			$this->addError('validation',5);
+			$this->addError('validation',5,array(stringify($ids)));
 		} else {
 			$this->result = $returnArray ? $ids : $ids[0];
 		}
 		return $this;
 	}
 	public function processLocale($lang){
-		if(!in_array($lang,$this->locales)){
+		if(!in_array($lang,config('locales','Default'))){
 			$this->addError('validation',6);
 		}
 		return $this;
@@ -127,6 +123,10 @@ class Validation {
 	private function _text(&$field) {
 		$field = htmlentities($field,ENT_QUOTES,"UTF-8");
 		return !empty($field);
+	}
+	private function _emptyText(&$field) {
+		$field = htmlentities($field,ENT_QUOTES,"UTF-8");
+		return true;
 	}
 	private function _bool(&$field) {
 		return settype($field,'bool');

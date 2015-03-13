@@ -8,22 +8,21 @@ class DB {
 	private $link = null;
 
 	private function __init(){
-		$DB = array();
-		include_once CONFIG_PATH . 'DB.php';
-		$this->link = new mysqli($DB['host'],$DB['user'],$DB['password'],$DB['db']);
+		Config::getInstance()->load('DB');
+		$this->link = new mysqli(config('host','DB'),config('user','DB'),config('password','DB'),config('db','DB'));
 		if($this->link->connect_error){
 			$this->addError('connection',$this->link->connect_errno,$this->link->connect_error);
 		}
-		$this->link->set_charset("utf8");
+		$this->link->set_charset(config('encoding','DB'));
 	}
 
 	public function upsert($table,$lang = false,$data = null,$id = null){
 		if(!is_null($data)) {
-			if(empty($lang)){
-				$lang = false;
-				$this->addErrors(Validation::getInstance()->setTable($table)->process($data,null,'required')->errors());
+			if($lang){
+				$dataLang = $data;
+				$this->addErrors(Validation::getInstance()->setTable($table)->process($dataLang,false,'required')->process($data,null,'required')->processLocale($lang)->errors());
 			} else {
-				$this->addErrors(Validation::getInstance()->setTable($table)->process($dataLang = clone $data,false,'required')->process($data,null,'required')->processLocale($lang)->errors());
+				$this->addErrors(Validation::getInstance()->setTable($table)->process($data,null,'required')->errors());
 			}
 		}
 		if($this->addErrors(
@@ -39,7 +38,7 @@ class DB {
 		if(!($res = $this->link->query("INSERT INTO $into VALUES $values ON DUPLICATE KEY UPDATE $update;"))){
 			return $this->addError('insert/update',$this->link->errno,$this->link->error);
 		}
-		$id = ($id == 0) ? $this->link->insert_id : $id;
+		$id = is_null($id) ? $this->link->insert_id : $id;
 		if($lang){
 			$dataLang["{$table}ID"] = $id;
 			$dataLang['Lang'] = $lang;
@@ -80,14 +79,12 @@ class DB {
 				$filter = array($key => $filter);
 			}
 			if(array_key_exists('ID',$filter)){
-				$this->addErrors(Validation::getInstance()->setTable($table)->processID($filter['ID'])->process($filter,empty($lang) ? null : true)->putResult($filter['ID'])->errors());
+				$this->addErrors(Validation::getInstance()->setTable($table)->processID($filter['ID'])->process($filter,$lang ? true : null)->putResult($filter['ID'])->errors());
 			} else {
-				$this->addErrors(Validation::getInstance()->setTable($table)->process($filter,empty($lang) ? null : true)->errors());
+				$this->addErrors(Validation::getInstance()->setTable($table)->process($filter,$lang ? true : null)->errors());
 			}
 		}
-		if(empty($lang)) {
-			$lang = false;
-		} else {
+		if($lang) {
 			$filter['Lang'] = $lang;
 			$this->addErrors(Validation::getInstance()->processLocale($lang)->errors());
 		}
@@ -97,8 +94,8 @@ class DB {
 		if($this->_errorsNumber){
 			return $this;
 		}
-		$select = (($lang !== false) ? "`{$table}Lang`.*, " : "") . "`{$table}`.*";
-		$from = "`$table`" . (($lang !== false) ? " JOIN `{$table}Lang` ON(`{$table}Lang`.`{$table}ID` = `{$table}`.`ID`)" : "");
+		$select = ($lang ? "`{$table}Lang`.*, " : "") . "`{$table}`.*";
+		$from = "`$table`" . ($lang ? " JOIN `{$table}Lang` ON(`{$table}Lang`.`{$table}ID` = `{$table}`.`ID`)" : "");
 		$where = is_null($filter) ? "" : "WHERE " . implode(' AND ',array_map(function($k,$v){return is_null($v) ? "`$k` IS NULL" : (is_array($v) ? "`$k` IN('" . implode('\',\'',$v) . "')" : "`$k` = '$v'");},array_keys($filter),array_values($filter)));
 		if(!($res = $this->link->query("SELECT $select FROM $from $where;"))){
 			return $this->addError('select',$this->link->errno,$this->link->error);
@@ -120,11 +117,14 @@ class DB {
 		}
 		return $this;
 	}
-	public function drop($table,$ids){
+	public function drop($table,$ids,$lang = false){
 		if(!is_array($ids)){
 			$ids = array($ids);
 		}
 		if(!$this->addErrors(Validation::getInstance()->processID($ids)->putResult($ids)->errors())->_errorsNumber){
+			if($lang && !($res = $this->link->query("DELETE FROM `{$table}Lang` WHERE `{$table}ID` IN(" . implode(',',$ids) . ");"))){
+				return $this->addError('drop',$this->link->errno,$this->link->error);
+			}
 			if(!($res = $this->link->query("DELETE FROM `{$table}` WHERE `ID` IN(" . implode(',',$ids) . ");"))){
 				return $this->addError('drop',$this->link->errno,$this->link->error);
 			}

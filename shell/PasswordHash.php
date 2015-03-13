@@ -43,9 +43,8 @@ class PasswordHash {
 	private $HASH_PBKDF2_INDEX = null;
 
 	private function __init(){
-		$PasswordHash = array();
-		include_once CONFIG_PATH . 'PasswordHash.php';
-		foreach($PasswordHash as $key => $value){
+		Config::getInstance()->load('PasswordHash');
+		foreach(config('PasswordHash') as $key => $value){
 			$this->$key = $value;
 		}
 	}

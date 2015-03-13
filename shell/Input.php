@@ -6,9 +6,8 @@ class Input {
 	private $_vars = null;
 
 	private function __init(){
-		$Input = array();
-		include_once CONFIG_PATH . 'Input.php';
-		$this->_vars = array_merge($Input,$_REQUEST);
+		Config::getInstance()->load('Input');
+		$this->_vars = array_merge(config('Input'),$_REQUEST);
 	}
 
 	public function getValue($key){

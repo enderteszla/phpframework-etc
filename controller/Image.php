@@ -3,28 +3,39 @@
 class Image {
 	use Controller;
 
-	private $config = null;
 	private $source = null;
 	private $filter = null;
 
-	private function __init(){
-		$Image = array();
-		include_once CONFIG_PATH . 'Image.php';
-		$this->config = $Image;
-	}
-
-	public function _create($owner_type = 'default',$id = 0,$finalize = true){
-		if(!in_array($owner_type,array_keys($this->config['filters']))){
-			$owner_type = 'default';
+	public function create($id = 0,$finalize = true){
+		Config::getInstance()->load('Image');
+		$filter = explode('/',input('filter'));
+		switch(true){
+			case empty($filter):
+			case count($filter) == 1 && !array_key_exists($filter[0],config('filters','Image')):
+				$filter = config('filters','Image')['Default'];
+				$path = config('contentPath','Image') . "default/";
+				break;
+			case count($filter) == 1:
+				$filter = config('filters','Image')[input('filter')];
+				$path = config('contentPath','Image') . lcfirst(input('filter')) . "/";
+				break;
+			default:
+				$filter = config('filters','Image');
+				$path = config('contentPath','Image');
+				foreach(explode('/',input('filter')) as $i){
+					if(array_key_exists($i,$filter)){
+						$filter = $filter[$i];
+						$path .= lcfirst($i) . "/";
+					} else {
+						$filter = config('filters','Image')['Default'];
+						$path = config('contentPath','Image') . "default/";
+						break;
+					}
+				}
 		}
-		return $this
-			->processSource()
-			->prepareFilter($this->config['filters'][$owner_type])
-			->save($this->config['contentPath'] . "$owner_type/",$id)
-			->finalize($finalize);
+		return $this->processSource()->prepareFilter($filter)->save($path,$id)->finalize($finalize);
 	}
-
-	public function _remove($ids){
+	public function remove($ids){
 		switch(true){
 			case is_array($ids):
 				break;
@@ -34,13 +45,16 @@ class Image {
 			default:
 				$ids = array($ids);
 		}
-		if($this->addErrors(DB::getInstance()->get('Image',false,$ids)->putResult($image)->errors())->_errorsNumber){
+		if($this->_get($ids)->_drop()->_errorsNumber){
 			return $this;
 		}
-		if($this->addErrors(DB::getInstance()->drop('Image',$ids)->errors())->_errorsNumber){
-			return $this;
+		if(is_assoc($this->result)){
+			@unlink(BASE_PATH . $this->result['URL']);
+		} else {
+			foreach($this->result as $image){
+				@unlink(BASE_PATH . $image['URL']);
+			}
 		}
-		@unlink(BASE_PATH . $image['URL']);
 		return $this;
 	}
 
@@ -48,7 +62,7 @@ class Image {
 		if(!is_null($this->source)){
 			return $this;
 		}
-		$tmp_name = $_FILES[$this->config['file_index']]['tmp_name'];
+		$tmp_name = $_FILES[config('uploadFileIndex','Default')]['tmp_name'];
 		$this->source = array();
 		if(!is_uploaded_file($tmp_name)){
 			return $this->addError('image',0);
@@ -76,7 +90,6 @@ class Image {
 		imagesavealpha($this->source['image'],true);
 		return $this;
 	}
-
 	private function prepareFilter($filter){
 		$this->filter = $filter;
 		switch(true){
@@ -104,32 +117,37 @@ class Image {
 		}
 		return $this;
 	}
-
 	private function save($folder, $id = 0){
 		if($this->_errorsNumber){
 			return $this;
 		}
 		if($id == 0) {
-			if ($this->addErrors(DB::getInstance()->upsert('Image', false, array(
+			$id = null;
+			if ($this->_upsert(array(
 				'Width' => $this->filter['w'],
 				'Height' => $this->filter['h'],
-				'URL' => $folder . ((int)(array_reverse(DB::getInstance()->get('Image')->getResult())[0]['ID']) + 1) . ".{$this->filter['ext']}"
-			))->putResult($target)->errors())->_errorsNumber
+				'URL' => ""
+			))->_errorsNumber
 			) {
 				return $this;
 			}
-		} else {
-			if ($this->addErrors(DB::getInstance()->get('Image', false, $id)->putResult($target)->errors())->_errorsNumber){
-				return $this;
-			}
+			$id = $this->result['ID'];
 		}
-		$target['image'] = imagecreatetruecolor($this->filter['w'],$this->filter['h']);
+		if ($this->_upsert(array(
+			'Width' => $this->filter['w'],
+			'Height' => $this->filter['h'],
+			'URL' => $folder . "$id.{$this->filter['ext']}"
+		), $id)->_errorsNumber
+		) {
+			return $this;
+		}
+		$this->result['image'] = imagecreatetruecolor($this->filter['w'],$this->filter['h']);
 		if($this->filter['alpha']){
-			imagealphablending($target['image'],false);
-			imagesavealpha($target['image'],true);
+			imagealphablending($this->result['image'],false);
+			imagesavealpha($this->result['image'],true);
 		}
 		imagecopyresampled(
-			$target['image'],
+			$this->result['image'],
 			$this->source['image'],
 			0,
 			0,
@@ -142,17 +160,16 @@ class Image {
 		);
 		switch(true){
 			case $this->filter['ext'] == 'jpg':
-				imagejpeg($target['image'],BASE_PATH . $target['URL']);
+				imagejpeg($this->result['image'],BASE_PATH . $this->result['URL']);
 				break;
 			case $this->filter['ext'] == 'png':
-				imagepng($target['image'],BASE_PATH . $target['URL']);
+				imagepng($this->result['image'],BASE_PATH . $this->result['URL']);
 				break;
 		}
-		imagedestroy($target['image']);
-		unset($target['image']);
-		return $this->setResult($target);
+		imagedestroy($this->result['image']);
+		unset($this->result['image']);
+		return $this;
 	}
-
 	private function finalize($finalize){
 		if($finalize) {
 			imagedestroy($this->source['image']);

@@ -3,32 +3,20 @@
 class Output {
 	use Shell;
 
-	private $config = null;
-	private $dataType = null;
 	private $source = null;
 
 	private function __init(){
-		$Output = array();
-		include_once CONFIG_PATH . 'Output.php';
-		$this->config = $Output;
-		$this->dataType = $this->config['allowedDataTypes'][0];
+		Config::getInstance()->load('Output');
 	}
 
-	public function setDataType($dataType){
-		if(in_array($dataType,$this->config['allowedDataTypes'])){
-			$this->dataType = $dataType;
-		}
-		return $this;
-	}
 	public function setSource($source){
 		$this->source = $source;
 		return $this;
 	}
 	public function expose(){
-		if(!method_exists($this,$this->dataType)){
-			include BASE_PATH . '/404.php';
-		}
-		call_user_func_array(array($this,$this->dataType),func_get_args());
+		$dataType = input('json') ? 'json' :
+			($_SERVER['REQUEST_METHOD'] == 'POST' ? 'viewInJson' : 'view');
+		call_user_func_array(array($this,$dataType),func_get_args());
 		return $this;
 	}
 
