@@ -4,31 +4,56 @@ class Validation {
 	use Shell;
 
 	private $table = null;
+	private $lang = null;
+	private $mode = null;
 	private $rules = null;
+	private $flags = null;
 
 	public function __init(){
-		Config::getInstance()->load('Validation');
-		$this->rules = config('Validation');
+		$this->mode = array();
+		Config::_getInstance()->load('Validation');
+		$this->rules = config('rules','Validation');
+		$this->flags = config('flags','Validation');
 	}
 
 	public function setTable($table){
-		if(!array_key_exists($table,$this->rules)){
+		if(!array_key_exists($table,$this->rules) || !array_key_exists($table,$this->flags)){
 			$this->addError('validation',0,array($table));
 		} else {
 			$this->table = $table;
 		}
 		return $this;
 	}
-	public function process(&$data,$lang = null,$mode = null){
+	public function setLang($lang = null){
+		$this->lang = $lang;
+		return $this;
+	}
+	public function setMode($mode = null){
 		switch(true){
-			case $lang === true: // Locale-sensitive data available; use both.
+			case is_null($mode):
+				$this->mode = array();
+				break;
+			case is_array($mode):
+				$this->mode = $mode;
+				break;
+			default:
+				$this->mode = array($mode);
+		}
+		return $this;
+	}
+	public function process(&$data){
+		switch(true){
+			case $this->lang === true: // Locale-sensitive data available; use both.
 				$rules = array_merge($this->rules[$this->table . 'Lang'],$this->rules[$this->table]);
 				break;
-			case $lang === false: // Locale-sensitive data available; use only it.
+			case $this->lang === false: // Locale-sensitive data available; use only it.
 				$rules = $this->rules[$this->table . 'Lang'];
 				break;
 			default: // Locale-sensitive data unavailable.
 				$rules = $this->rules[$this->table];
+		}
+		if(in_array('flags',$this->mode)){
+			$rules = array_merge(array_fill_keys($this->flags[$this->table],'_bool'),$rules);
 		}
 		foreach ($data as $key => &$value) {
 			switch(true){
@@ -66,24 +91,19 @@ class Validation {
 				default:
 			}
 		}
-		switch($mode){
-			case 'non-empty':
-				if(empty($data)){
-					$this->addError('validation',3);
+		if(in_array('non-empty',$this->mode) && empty($data)){
+			$this->addError('validation',3);
+		}
+		if(in_array('required',$this->mode)){
+			foreach (array_keys($rules) as $key) {
+				if (!array_key_exists($key, $data)) {
+					$this->addError('validation', 4, array($key));
 				}
-				break;
-			case 'required':
-				foreach (array_keys($rules) as $key) {
-					if (!array_key_exists($key, $data)) {
-						$this->addError('validation',4,array($key));
-					}
-				}
-				break;
-			default:
+			}
 		}
 		return $this;
 	}
-	public function processID($ids){
+	public function processID(&$ids){
 		if(is_array($ids)){
 			$returnArray = true;
 		} else {
@@ -96,16 +116,93 @@ class Validation {
 			}
 		}
 		if(empty($ids)){
-			$this->addError('validation',5,array(stringify($ids)));
-		} else {
-			$this->result = $returnArray ? $ids : $ids[0];
+			return $this->addError('validation',5,array(stringify($ids)));
 		}
-		return $this;
+		return $this->result($returnArray ? $ids : $ids[0]);
 	}
 	public function processLocale($lang){
 		if(!in_array($lang,config('locales','Default'))){
 			$this->addError('validation',6);
 		}
+		return $this;
+	}
+	public function processFlags(&$flags){
+		foreach($flags as $k => &$v){
+			if(!in_array($k,$this->flags[$this->table]) || call_user_func_array(array($this,'_bool'),array(&$v))){
+				unset($flags[$k]);
+			}
+		}
+		return $this;
+	}
+	public function processWith(&$with){
+		$return = array();
+		foreach(is_array($with) ? $with : array($with) as $item){
+			if(!array_key_exists($item,$this->rules) || !array_key_exists($item,$this->flags)){
+				continue;
+			}
+			foreach(preg_grep("/^{$item}ID\d*$/",array_keys($this->rules[$this->table])) as $key) {
+				$d = str_replace("{$item}ID",'',$key);
+				$fields = array();
+				foreach (array_merge(array_fill_keys($this->flags[$item],'_bool'),$this->rules[$item]) as $key => $rule) {
+					$fields[$key] = "{$item}{$key}{$d}";
+				}
+				if(!is_null($this->lang) && array_key_exists($item . 'Lang',$this->rules)){
+					$langFields = array();
+					foreach ($this->rules[$item . 'Lang'] as $key => $rule) {
+						$langFields[$key] = "{$item}{$key}{$d}";
+					}
+					$return[] = array(
+						'Table' => $item,
+						'Key' => "{$item}ID{$d}",
+						'Alias' => "{$item}{$d}",
+						'LangAlias' => "{$item}Lang{$d}",
+						'Fields' => $fields,
+						'LangFields' => $langFields
+					);
+				} else {
+					$return[] = array(
+						'Table' => $item,
+						'Key' => "{$item}ID{$d}",
+						'Alias' => "{$item}{$d}",
+						'Fields' => $fields
+					);
+				}
+			}
+		}
+		$with = $return;
+		return $this;
+	}
+
+	public function processAggregate(&$aggregate){
+		$return = array();
+		foreach(is_array($aggregate) ? $aggregate : array($aggregate => 'MAX(ID)') as $item => $signature){
+			if(!array_key_exists($item,$this->rules) || !array_key_exists($item,$this->flags) || !preg_match("/^([^\(]+)\(([^\)]+)\)$/i",$signature,$m)){
+				continue;
+			}
+			list(,$func,$arg) = $m;
+			switch(true){
+				case $this->lang === true: // Locale-sensitive data available; use both.
+					$rules = array_merge($this->rules[$item . 'Lang'],$this->rules[$item]);
+					break;
+				case $this->lang === false: // Locale-sensitive data available; use only it.
+					$rules = $this->rules[$item . 'Lang'];
+					break;
+				default: // Locale-sensitive data unavailable.
+					$rules = $this->rules[$item];
+			}
+			if(in_array('flags',$this->mode)){
+				$rules = array_merge(array_fill_keys($this->flags[$item],'_bool'),$rules);
+			}
+			if(!array_key_exists($arg,$rules) || !in_array($func,config('functions','Validation'))){
+				continue;
+			}
+			$return[] = array(
+				'Table' => $item,
+				'Function' => "$func(`$item`.`$arg`)",
+				'Alias' => $signature
+			);
+		}
+		$aggregate = $return;
 		return $this;
 	}
 

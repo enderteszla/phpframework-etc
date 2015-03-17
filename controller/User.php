@@ -7,41 +7,39 @@ class User {
 	use Controller;
 
 	public function index(){
-		return $this->setResult(array());
+		return $this->result(array());
 	}
 	public function register(){
 		if(!input('json')){
-			$this->result = array();
-			return $this;
+			return $this->result(array());
 		}
 		$email = input('email');
 		$password = input('password');
 		$firstName = input('firstName');
 		$lastName = input('lastName');
-		if(!empty($this->_get($email,'Email')->result)){
+		if(!empty($this->_get($email,'Email')->_result)){
 			return $this->addError('registration',0);
 		}
 		if($this->_upsert(array(
 			'Email' => $email,
-			'Password' => PasswordHash::getInstance()->create_hash($password),
+			'Password' => PasswordHash::_getInstance()->create_hash($password),
 			'FirstName' => $firstName,
 			'LastName' => $lastName
-		))->_errorsNumber) {
+		))->countErrors()){
 			return $this;
 		}
-		if($this->addErrors(Token::getInstance()->_upsert(array(
-			'Content' => Token::getInstance()->generate(),
+		Token::_getInstance()->_upsert(array(
+			'Content' => Token::_getInstance()->_generate(),
 			'Type' => 'activate',
-			'UserID' => $this->result['ID']
-		))->errors())->_errorsNumber){
-			return $this;
+			'UserID' => $this->_result['ID']
+		))->__($this->_('token',false));
+		Email::_getInstance()
+			->send($email,'activate',array('token' => $this->_('token')['Content']));
+		if($this->countErrors()) {
+			Token::_getInstance()->_drop();
+			return $this->_drop();
 		}
-		if(!$this->addErrors(Email::getInstance()
-			->send($email,'activate',array('token' => array(Token::getInstance()->getResult()['Content'])))
-			->errors())->_errorsNumber){
-			$this->result = Lang::getInstance()->getValue('activationSent','User');
-		}
-		return $this;
+		return $this->result(Lang::_getInstance()->getValue('activationSent','User'));
 	}
 	public function login(){
 		if(!input('json')){
@@ -49,89 +47,89 @@ class User {
 		}
 		$email = input('email');
 		$password = input('password');
-		if($this->_get($email,'Email',true)->_errorsNumber || empty($this->result)){
+		if($this->_get(array('Email' => $email,'Active' => true))->_eq()->countErrors() || empty($this->_result)){
 			return $this->addError('authentication',3);
 		}
-		if(!PasswordHash::getInstance()->validate_password($password,$this->result[0]['Password'])){
+		if(!PasswordHash::_getInstance()->validate_password($password,$this->_result['Password'])){
 			return $this->addError('authentication',4);
 		}
-		if(!$this->addErrors(Token::getInstance()->_upsert(array(
-			'Content' => Token::getInstance()->generate(),
+		Token::_getInstance()->_upsert(array(
+			'Content' => Token::_getInstance()->_generate(),
 			'Type' => 'session',
-			'UserID' => $this->result[0]['ID']
-		))->putResult($token)->errors())->_errorsNumber){
-			$this->result = $token['Content'];
+			'UserID' => $this->_result['ID']
+		))->__($this->_('token',false));
+		if($this->countErrors()){
+			return $this;
 		}
-		return $this;
+		return $this->result($this->_('token')['Content']);
 	}
 	public function logout(){
 		if(!input('json')){
 			include BASE_PATH . '/404.php';
 		}
-		if(is_null(Token::getInstance()->getResult()[0]['UserID']) || (Token::getInstance()->getResult()[0]['Type'] != 'session')) {
+		Token::_getInstance()->__($this->_('token',false));
+		if(is_null($this->_('token')) || is_null($this->_('token')['UserID']) || ($this->_('token')['Type'] != 'session')) {
 			return $this->addError('authentication',2);
 		}
-		if(!$this->addErrors(Token::getInstance()->_drop(Token::getInstance()->getResult()[0]['ID'])->errors())->_errorsNumber){
-			// Anything else? Yeah. Sue me.
-		}
+		Token::_getInstance()->_drop();
 		return $this;
 	}
 	public function activate($content){
-		if(!empty(Token::getInstance()->_get(array(
-				'Content' => $content,
-				'Type' => 'activate'
-			))->putResult($token)->errors()) || is_null($token)) {
+		Token::_getInstance()->_get(array(
+			'Content' => $content,
+			'Type' => 'activate'
+		))->_eq()->_drop()->__($this->_('token',false));
+		if($this->countErrors() || is_null($this->_('token'))) {
 			return $this->addError('activation',0);
 		}
-		if($this->_set($token[0]['UserID'])->_errorsNumber){
+		if($this->_set($this->_('token')['UserID'])->countErrors()){
 			return $this;
 		}
-		$this->result = $this->_get($token[0]['UserID']);
-		return $this->addErrors(Token::getInstance()->_drop($token[0]['ID'])->errors());
+		return $this->_get($this->_('token')['UserID']);
 	}
 	public function restorePassword($content = null){
+		$t = Token::_getInstance();
 		if(!is_null($content)){
-			if(!empty(Token::getInstance()->_get(array(
-					'Content' => $content,
-					'Type' => 'restorePassword'
-				))->putResult($token)->errors()) || is_null($token)) {
+			$t->_get(array(
+				'Content' => $content,
+				'Type' => 'restorePassword'
+			))->_eq()->__($this->_('token',false));
+			if($this->countErrors() || is_null($this->_('token'))) {
 				return $this->addError('password restoration',0);
 			}
-			$this->_get(Token::getInstance()->getResult()[0]['UserID']);
+			$this->_get($this->_('token')['UserID']);
 			if(!input('json')) {
 				return $this;
 			}
 			if($this->_upsert(array(
-				'Email' => $this->result['Email'],
-				'Password' => PasswordHash::getInstance()->create_hash(input('password')),
-				'FirstName' => $this->result['FirstName'],
-				'LastName' => $this->result['LastName']
-			))->_errorsNumber){
+				'Email' => $this->_result['Email'],
+				'Password' => PasswordHash::_getInstance()->create_hash(input('password')),
+				'FirstName' => $this->_result['FirstName'],
+				'LastName' => $this->_result['LastName']
+			))->countErrors()){
 				return $this;
 			}
-			$this->addErrors(Token::getInstance()->_drop($token[0]['ID'])->errors())->result = Lang::getInstance()->getValue('passwordReset','User');
-			return $this;
+			$t->_drop();
+			return $this->result(Lang::_getInstance()->getValue('passwordReset','User'));
 		}
 		if(!input('json')) {
-			$this->result = array();
-			return $this;
+			return $this->result(array());
 		}
 		$email = input('email');
-		if($this->_get($email,'Email',true)->_errorsNumber || empty($this->result)){
+		if($this->_get(array('Email' => $email,'Active' => true))->_eq()->countErrors() || empty($this->_result)){
 			return $this->addError('password restoration',1);
 		}
-		if($this->addErrors(Token::getInstance()->_upsert(array(
-			'Content' => Token::getInstance()->generate(),
+		$t->_upsert(array(
+			'Content' => $t->_generate(),
 			'Type' => 'restorePassword',
-			'UserID' => $this->result['ID']
-		))->errors())->_errorsNumber){
+			'UserID' => $this->_result['ID']
+		))->__($this->_('token',false));
+		Email::_getInstance()
+			->send($email,'restorePassword',array('token' => $this->_('token')['Content']));
+		if($this->countErrors()){
+			$t->_drop();
 			return $this;
 		}
-		if(!$this->addErrors(Email::getInstance()
-			->send($email,'restorePassword',array('token' => array(Token::getInstance()->getResult()['Content'])))
-			->errors())->_errorsNumber){
-			$this->result = Lang::getInstance()->getValue('passwordRestorationSent','User');
-		}
-		return $this;
+		return $this->result(Lang::_getInstance()->getValue('passwordRestorationSent','User'));
 	}
 }

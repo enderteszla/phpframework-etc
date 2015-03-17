@@ -6,7 +6,7 @@ class Debug {
 	private $traceFlag = null;
 
 	private function __init(){
-		Config::getInstance()->load('Debug');
+		Config::_getInstance()->load('Debug');
 	}
 
 	public function start(){

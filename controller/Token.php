@@ -3,16 +3,13 @@
 class Token {
 	use Controller;
 
-	public function checkAuthorization(){
-		if(is_null($this->result[0]['UserID']) || $this->result[0]['Type'] != 'session'){
-			return $this->addError('authentication',1);
-		}
-		return $this;
+	public function _checkAuthorization(){
+		return is_assoc($this->_result) && !is_null($this->_result['UserID']) && $this->_result['Type'] == 'session';
 	}
-	public function generate(){
+	public function _generate(){
 		do {
 			$token = md5(uniqid(mt_rand(), true));
-		} while(!is_null($this->_get($token,'Content')->result));
+		} while(!is_null($this->_get($token,'Content')->_result));
 		return $token;
 	}
 }

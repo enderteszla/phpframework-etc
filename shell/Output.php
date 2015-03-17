@@ -6,7 +6,7 @@ class Output {
 	private $source = null;
 
 	private function __init(){
-		Config::getInstance()->load('Output');
+		Config::_getInstance()->load('Output');
 	}
 
 	public function setSource($source){
@@ -21,7 +21,7 @@ class Output {
 	}
 
 	private function view($view){
-		if($this->_errorsNumber || !is_array($this->source) || !is_file($view)){
+		if($this->countErrors() || !is_array($this->source) || !is_file($view)){
 			include BASE_PATH . '/404.php';
 		}
 		foreach($this->source as $key => $value){
@@ -31,7 +31,7 @@ class Output {
 		return $this;
 	}
 	private function json(){
-		if($this->_errorsNumber > 0){
+		if($this->countErrors() > 0){
 			$data = array(
 				'status' => 'Fail',
 				'data' => $this->errors()
@@ -50,7 +50,7 @@ class Output {
 		return $this->view($view)->setSource(ob_get_clean())->json();
 	}
 	private function viewReturned($view){
-		if($this->_errorsNumber){
+		if($this->countErrors()){
 			return $this;
 		}
 		if(!is_array($this->source)){
@@ -64,6 +64,6 @@ class Output {
 		}
 		ob_start();
 		include $view;
-		return $this->setResult(ob_get_clean());
+		return $this->result(ob_get_clean());
 	}
 }

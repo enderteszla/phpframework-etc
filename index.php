@@ -36,26 +36,23 @@ if(!is_file(CONTROLLER_PATH . $controller . '.php')){
 	include_once BASE_PATH . '/404.php';
 }
 require_once CONTROLLER_PATH . $controller . '.php';
-$controllerInstance = $controller::getInstance();
+$controllerInstance = $controller::_getInstance();
 
 if(!method_exists($controllerInstance,$method)){
 	include_once BASE_PATH . '/404.php';
 }
 
-$data = array();
+$data = array('token' => false,'_user' => false);
 /* <Data for="header"> */
-if(!empty(Token::getInstance()->_get(input('token'),'Content')->errors())) {
-	$controllerInstance->addError('authentication',0);
+if(Token::_getInstance()->_get(input('token'),'Content')->_eq()->__($data['token'])->_checkAuthorization()){
+	User::_getInstance()->_get($data['token']['UserID'])->__($data['_user']);
 }
-if(Token::getInstance()->checkAuthorization()->errors()){
-	Token::getInstance()->flushErrors();
-} else {
-	User::getInstance()->_get(Token::getInstance()->getResult()[0]['UserID'])->putResult($data['_user']);
+if(is_null($data['token'])) {
+	Error::_getInstance()->add('authentication',0);
 }
 /* </Data for="header"> */
 
 call_user_func_array(array($controllerInstance,$method),$args);
-Output::getInstance()
-	->addErrors($controllerInstance->errors())
-	->setSource(array_merge($data,$controllerInstance->getResult()))
+Output::_getInstance()
+	->setSource(array_merge($data,is_null($controllerInstance->__()) ? array() : $controllerInstance->__()))
 	->expose(VIEW_PATH . strtolower($controller) . "/$method.php");

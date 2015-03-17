@@ -7,7 +7,7 @@ class Image {
 	private $filter = null;
 
 	public function create($id = 0,$finalize = true){
-		Config::getInstance()->load('Image');
+		Config::_getInstance()->load('Image');
 		$filter = explode('/',input('filter'));
 		switch(true){
 			case empty($filter):
@@ -45,13 +45,13 @@ class Image {
 			default:
 				$ids = array($ids);
 		}
-		if($this->_get($ids)->_drop()->_errorsNumber){
+		if($this->_get($ids)->_drop()->countErrors()){
 			return $this;
 		}
-		if(is_assoc($this->result)){
-			@unlink(BASE_PATH . $this->result['URL']);
+		if(is_assoc($this->_result)){
+			@unlink(BASE_PATH . $this->_result['URL']);
 		} else {
-			foreach($this->result as $image){
+			foreach($this->_result as $image){
 				@unlink(BASE_PATH . $image['URL']);
 			}
 		}
@@ -118,7 +118,7 @@ class Image {
 		return $this;
 	}
 	private function save($folder, $id = 0){
-		if($this->_errorsNumber){
+		if($this->countErrors()){
 			return $this;
 		}
 		if($id == 0) {
@@ -127,27 +127,27 @@ class Image {
 				'Width' => $this->filter['w'],
 				'Height' => $this->filter['h'],
 				'URL' => ""
-			))->_errorsNumber
+			))->countErrors()
 			) {
 				return $this;
 			}
-			$id = $this->result['ID'];
+			$id = $this->_result['ID'];
 		}
 		if ($this->_upsert(array(
 			'Width' => $this->filter['w'],
 			'Height' => $this->filter['h'],
 			'URL' => $folder . "$id.{$this->filter['ext']}"
-		), $id)->_errorsNumber
+		), $id)->countErrors()
 		) {
 			return $this;
 		}
-		$this->result['image'] = imagecreatetruecolor($this->filter['w'],$this->filter['h']);
+		$this->_result['image'] = imagecreatetruecolor($this->filter['w'],$this->filter['h']);
 		if($this->filter['alpha']){
-			imagealphablending($this->result['image'],false);
-			imagesavealpha($this->result['image'],true);
+			imagealphablending($this->_result['image'],false);
+			imagesavealpha($this->_result['image'],true);
 		}
 		imagecopyresampled(
-			$this->result['image'],
+			$this->_result['image'],
 			$this->source['image'],
 			0,
 			0,
@@ -160,14 +160,14 @@ class Image {
 		);
 		switch(true){
 			case $this->filter['ext'] == 'jpg':
-				imagejpeg($this->result['image'],BASE_PATH . $this->result['URL']);
+				imagejpeg($this->_result['image'],BASE_PATH . $this->_result['URL']);
 				break;
 			case $this->filter['ext'] == 'png':
-				imagepng($this->result['image'],BASE_PATH . $this->result['URL']);
+				imagepng($this->_result['image'],BASE_PATH . $this->_result['URL']);
 				break;
 		}
-		imagedestroy($this->result['image']);
-		unset($this->result['image']);
+		imagedestroy($this->_result['image']);
+		unset($this->_result['image']);
 		return $this;
 	}
 	private function finalize($finalize){

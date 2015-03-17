@@ -1,5 +1,6 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
+require_once SHELL_PATH . 'QueryBuilder.php';
 require_once SHELL_PATH . 'Validation.php';
 
 class DB {
@@ -8,7 +9,7 @@ class DB {
 	private $link = null;
 
 	private function __init(){
-		Config::getInstance()->load('DB');
+		Config::_getInstance()->load('DB');
 		$this->link = new mysqli(config('host','DB'),config('user','DB'),config('password','DB'),config('db','DB'));
 		if($this->link->connect_error){
 			$this->addError('connection',$this->link->connect_errno,$this->link->connect_error);
@@ -17,60 +18,64 @@ class DB {
 	}
 
 	public function upsert($table,$lang = false,$data = null,$id = null){
+		$v = Validation::_getInstance()->setTable($table)->setLang()->setMode('required');
 		if(!is_null($data)) {
 			if($lang){
 				$dataLang = $data;
-				$this->addErrors(Validation::getInstance()->setTable($table)->process($dataLang,false,'required')->process($data,null,'required')->processLocale($lang)->errors());
+				$v->process($data)->setLang(false)->process($dataLang)->processLocale($lang);
 			} else {
-				$this->addErrors(Validation::getInstance()->setTable($table)->process($data,null,'required')->errors());
+				$v->process($data);
 			}
 		}
-		if($this->addErrors(
-			is_null($id) ? array() : Validation::getInstance()->processID($id)->putResult($id)->errors()
-		)->_errorsNumber){
+		if(!is_null($id)){
+			$v->processID($id);
+		}
+		if($this->countErrors()){
 			return $this;
 		}
 		$data['ID'] = $id;
-		$into = "`$table`(`" . implode('`,`',array_keys($data)) . "`)";
-		$values = $this->prepareQuery('values',$data);
-		unset($data['ID']);
-		$update = $this->prepareQuery('update',$data);
-		if(!($res = $this->link->query("INSERT INTO $into VALUES $values ON DUPLICATE KEY UPDATE $update;"))){
+		$QB = QueryBuilder::_getInstance();
+		if(!($res = $this->link->query($QB->build('upsert',$table,$data)))){
 			return $this->addError('insert/update',$this->link->errno,$this->link->error);
 		}
 		$id = is_null($id) ? $this->link->insert_id : $id;
 		if($lang){
 			$dataLang["{$table}ID"] = $id;
 			$dataLang['Lang'] = $lang;
-			$into = "`{$table}Lang`(`" . implode('`,`',array_keys($dataLang)) . "`)";
-			$values = $this->prepareQuery('values',$dataLang);
-			unset($dataLang["{$table}ID"]);
-			unset($dataLang['Lang']);
-			$update = $this->prepareQuery('update',$dataLang);
-			if(!($res = $this->link->query("INSERT INTO $into VALUES $values ON DUPLICATE KEY UPDATE $update;"))){
+			$QB->_('lang',true);
+			if(!($res = $this->link->query($QB->build('upsert',"{$table}Lang",$dataLang)))){
 				return $this->addError('insert/update',$this->link->errno,$this->link->error);
 			}
 		}
 		return $this->get($table,$lang,$id);
 	}
-	public function set($table,$ids,$value = true,$field = 'Active'){
+	public function set($table,$ids,$flags = 'Active',$value = true){
 		if(!is_array($ids)){
 			$ids = array($ids);
 		}
-		if($value === true){
-			$value = 'true';
-		} else {
-			$value = 'false';
+		switch(true){
+			case !is_array($flags):
+				$flags = array($flags => $value);
+				break;
+			case !is_assoc($flags):
+				$flags = array_fill_keys($flags,$value);
+				break;
 		}
-		if(!$this->addErrors(Validation::getInstance()->processID($ids)->putResult($ids)->errors())->_errorsNumber){
-			if(!($res = $this->link->query("UPDATE `{$table}` SET `{$field}` = $value WHERE `ID` IN(" . implode(',',$ids) . ");"))){
-				return $this->addError('set',$this->link->errno,$this->link->error);
-			}
+		Validation::_getInstance()->processID($ids)->processFlags($flags);
+		if($this->countErrors()) {
+			return $this;
+		}
+		$QB = QueryBuilder::_getInstance();
+		if(!($res = $this->link->query($QB->build('set',$table,array('flags' => $flags,'ids' => $ids))))){
+			return $this->addError('set',$this->link->errno,$this->link->error);
 		}
 		return $this;
 	}
-	public function get($table,$lang = false,$filter = null,$key = null,$checkActive = false){
-		$this->result = null;
+	public function get($table,$lang = false,$filter = null,$key = null,$with = null,$aggregate = null){
+		$this->result(null);
+		$v = Validation::_getInstance()->setTable($table)->setLang($lang ? true : null)->setMode('flags');
+		$QB = QueryBuilder::_getInstance()->clean();
+		$QB->_('lang',$lang);
 		if(!is_null($filter)) {
 			if (!is_array($filter) || !is_assoc($filter)) {
 				if(is_null($key)){
@@ -79,93 +84,80 @@ class DB {
 				$filter = array($key => $filter);
 			}
 			if(array_key_exists('ID',$filter)){
-				$this->addErrors(Validation::getInstance()->setTable($table)->processID($filter['ID'])->process($filter,$lang ? true : null)->putResult($filter['ID'])->errors());
+				$filter['ID'] = $v->processID($filter['ID'])->process($filter)->__();
 			} else {
-				$this->addErrors(Validation::getInstance()->setTable($table)->process($filter,$lang ? true : null)->errors());
+				$v->process($filter);
 			}
 		}
 		if($lang) {
-			$filter['Lang'] = $lang;
-			$this->addErrors(Validation::getInstance()->processLocale($lang)->errors());
+			$v->processLocale($filter["{$table}Lang.Lang"] = $lang);
 		}
-		if($checkActive === true){
-			$filter['Active'] = true;
+		if($with){
+			$v->processWith($with);
+			$QB->with($table,$with);
 		}
-		if($this->_errorsNumber){
+		if($aggregate){
+			$v->processAggregate($aggregate);
+			$QB->aggregate($table,$aggregate);
+		}
+		if($this->countErrors()){
 			return $this;
 		}
-		$select = ($lang ? "`{$table}Lang`.*, " : "") . "`{$table}`.*";
-		$from = "`$table`" . ($lang ? " JOIN `{$table}Lang` ON(`{$table}Lang`.`{$table}ID` = `{$table}`.`ID`)" : "");
-		$where = is_null($filter) ? "" : "WHERE " . implode(' AND ',array_map(function($k,$v){return is_null($v) ? "`$k` IS NULL" : (is_array($v) ? "`$k` IN('" . implode('\',\'',$v) . "')" : "`$k` = '$v'");},array_keys($filter),array_values($filter)));
-		if(!($res = $this->link->query("SELECT $select FROM $from $where;"))){
+		if(!($res = $this->link->query($QB->build('get',$table,$filter)))){
 			return $this->addError('select',$this->link->errno,$this->link->error);
 		}
 		if(is_array($filter) && array_key_exists('ID',$filter) && !is_array($filter['ID'])){
 			if($res->num_rows == 0){
 				return $this->addError('select',0,array($table,$filter['ID']));
 			}
-			$this->result = $res->fetch_assoc();
+			$result = $res->fetch_assoc();
 		} else {
 			if($res->num_rows > 0) {
-				$this->result = array();
+				$result = array();
 				while($row = $res->fetch_assoc()){
-					$this->result[] = $row;
+					$result[] = $row;
 				}
 			} else {
-				$this->result = null;
+				$result = null;
 			}
 		}
-		return $this;
+		return $this->result($result);
 	}
 	public function drop($table,$ids,$lang = false){
 		if(!is_array($ids)){
 			$ids = array($ids);
 		}
-		if(!$this->addErrors(Validation::getInstance()->processID($ids)->putResult($ids)->errors())->_errorsNumber){
-			if($lang && !($res = $this->link->query("DELETE FROM `{$table}Lang` WHERE `{$table}ID` IN(" . implode(',',$ids) . ");"))){
-				return $this->addError('drop',$this->link->errno,$this->link->error);
-			}
-			if(!($res = $this->link->query("DELETE FROM `{$table}` WHERE `ID` IN(" . implode(',',$ids) . ");"))){
-				return $this->addError('drop',$this->link->errno,$this->link->error);
-			}
+		Validation::_getInstance()->processID($ids);
+		if($this->countErrors()) {
+			return $this;
+		}
+		$QB = QueryBuilder::_getInstance();
+		if($lang && !($res = $this->link->query($QB->build('drop',"`{$table}Lang`",array("`{$table}ID`"  => implode(',',$ids)))))){
+			return $this->addError('drop',$this->link->errno,$this->link->error);
+		}
+		if(!($res = $this->link->query($QB->build('drop',"`{$table}`",array("`ID`"  => implode(',',$ids)))))){
+			return $this->addError('drop',$this->link->errno,$this->link->error);
 		}
 		return $this;
 	}
 	public function makeIndexedArray(){
-		if(!$this->_errorsNumber && is_array($this->result) && !empty($this->result)){
-			$return = array();
-			foreach($this->result as $element){
-				$return[$element['ID']] = $element;
-			}
-			$this->result = $return;
+		if(!is_assoc($this->_result) || empty($this->_result)){
+			return $this->result(null);
 		}
-		return $this;
+		$return = array();
+		foreach($this->_result as $element){
+			$return[$element['ID']] = $element;
+		}
+		return $this->result($return);
 	}
-
-	private function prepareQuery($queryType,$data){
-		switch($queryType){
-			case 'where':
-				return is_null($data) ? "" :
-					"WHERE " . implode(' AND ',
-						array_map(function($k,$v){
-							return is_null($v) ? "`$k` IS NULL" :
-								(is_array($v) ? "`$k` IN('" . implode('\',\'',$v) . "')" :
-									(is_bool($v) ? "`$k` = $v" : "`$k` = '$v'"));
-						},array_keys($data),array_values($data)));
-			case 'values':
-				return "(" . implode(',',
-					array_map(function($k){
-						return is_null($k) ? 'NULL' :
-							"'$k'";
-					},array_values($data))) . ")";
-			case 'update':
-				return implode(',',
-					array_map(function($k,$v){
-						return is_null($v) ? "`$k`=NULL" :
-							"`$k`='$v'";
-					},array_keys($data),array_values($data)));
-			default:
-				return "";
+	public function test($query){
+		$result = array();
+		$res = $this->link->query($query);
+		if($res->num_rows > 0){
+			while($row = $res->fetch_assoc()){
+				$result[] = $row;
+			}
 		}
+		return $result;
 	}
 }

@@ -2,6 +2,6 @@
 
 function input($key,$value = null){
 	return is_null($value) ?
-		Input::getInstance()->getValue($key) :
-		Input::getInstance()->setValue($key,$value);
+		Input::_getInstance()->getValue($key) :
+		Input::_getInstance()->setValue($key,$value);
 }

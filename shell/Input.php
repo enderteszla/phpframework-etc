@@ -6,7 +6,7 @@ class Input {
 	private $_vars = null;
 
 	private function __init(){
-		Config::getInstance()->load('Input');
+		Config::_getInstance()->load('Input');
 		$this->_vars = array_merge(config('Input'),$_REQUEST);
 	}
 

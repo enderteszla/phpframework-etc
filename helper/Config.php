@@ -2,6 +2,6 @@
 
 function config($key,$type = null,$value = null){
 	return is_null($value) ?
-		Config::getInstance()->getValue($key,$type) :
-		Config::getInstance()->setValue($key,$type,$value);
+		Config::_getInstance()->getValue($key,$type) :
+		Config::_getInstance()->setValue($key,$type,$value);
 }
