@@ -1,8 +1,5 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-require_once SHELL_PATH . 'Email.php';
-require_once SHELL_PATH . 'PasswordHash.php';
-
 class User {
 	use Controller;
 

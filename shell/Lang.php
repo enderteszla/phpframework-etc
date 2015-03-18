@@ -11,7 +11,6 @@ class Lang {
 		$this->_lang = input('lang') . '/';
 		$this->_loaded = array();
 		$this->_vars = array();
-		$this->load('Error');
 	}
 
 	public function getValue($key,$type = null,$args = array()){
@@ -38,9 +37,9 @@ class Lang {
 		return "{$this->_vars['Error'][$key]['name']} ({$code}):" . (is_array($details) ? vsprintf($this->_vars['Error'][$key][$code],$details) : $details);
 	}
 	public function load($type){
-		if(!in_array($type,$this->_loaded) && is_file(LANG_PATH . $this->_lang . $type . ".php")){
+		if(!in_array($type,$this->_loaded) && is_file(LANG_PATH . "{$this->_lang}{$type}.php")){
 			$Lang = array();
-			include LANG_PATH . $this->_lang . $type . ".php";
+			include_once LANG_PATH . "{$this->_lang}{$type}.php";
 			$this->_loaded[] = $type;
 			$this->_vars[ $type ] = $Lang;
 		}

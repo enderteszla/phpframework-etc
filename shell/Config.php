@@ -9,7 +9,6 @@ class Config {
 	private function __init(){
 		$this->_loaded = array();
 		$this->_vars = array();
-		$this->load('Default');
 	}
 
 	public function setValue($key,$type,$value){
@@ -22,9 +21,9 @@ class Config {
 			((array_key_exists($key,$this->_vars[$type])) ? $this->_vars[$type][$key] : false);
 	}
 	public function load($type){
-		if(!in_array($type,$this->_loaded) && is_file(CONFIG_PATH . $type . ".php")){
+		if(!in_array($type,$this->_loaded) && is_file(CONFIG_PATH . "$type.php")){
 			$Config = array();
-			include_once CONFIG_PATH . $type . ".php";
+			include_once CONFIG_PATH . "$type.php";
 			$this->_loaded[] = $type;
 			$this->_vars[ $type ] = $Config;
 		}

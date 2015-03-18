@@ -20,14 +20,28 @@ class Output {
 		return $this;
 	}
 
-	private function view($view){
-		if($this->countErrors() || !is_array($this->source) || !is_file($view)){
+	private function view($view,$return = false){
+		if(!is_array($this->source)){
+			return $this->addError('output',0);
+		}
+		if(!is_file($view)) {
+			return $this->addError('output',1);
+		}
+		if($this->countErrors()){
+			if($return){
+				return $this;
+			}
 			include BASE_PATH . '/404.php';
 		}
 		foreach($this->source as $key => $value){
 			$$key = $value;
 		}
+		ob_start();
 		include $view;
+		if($return){
+			return $this->result(ob_get_clean());
+		}
+		ob_end_flush();
 		return $this;
 	}
 	private function json(){
@@ -48,22 +62,5 @@ class Output {
 	private function viewInJson($view){
 		ob_start();
 		return $this->view($view)->setSource(ob_get_clean())->json();
-	}
-	private function viewReturned($view){
-		if($this->countErrors()){
-			return $this;
-		}
-		if(!is_array($this->source)){
-			return $this->addError('output',0);
-		}
-		if(!is_file($view)) {
-			return $this->addError('output',1);
-		}
-		foreach($this->source as $key => $value){
-			$$key = $value;
-		}
-		ob_start();
-		include $view;
-		return $this->result(ob_get_clean());
 	}
 }

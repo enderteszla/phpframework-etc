@@ -97,19 +97,19 @@ class QueryBuilder {
 
 	private function insertInto($table,$keys = array()){
 		$this->_('insertInto',array_merge($keys,$this->_('insertInto')));
-		$this->_('insertInto',"`$table`(`" . implode('`,`',$this->_('insertInto')) . "`)");
+		$this->_('insertInto',"INSERT INTO `$table`(`" . implode('`,`',$this->_('insertInto')) . "`)");
 		return $this;
 	}
 	private function values($values = array()){
 		$this->_('values',array_merge($values,$this->_('values')));
 		$this->_('values',"VALUES(" . implode(',',
 			array_map(function($k){
-				switch($k){
-					case null:
+				switch(true){
+					case is_null($k):
 						return 'NULL';
-					case false:
+					case $k === false:
 						return 'FALSE';
-					case true:
+					case $k === true:
 						return 'TRUE';
 					default:
 						return "'$k'";
@@ -123,12 +123,12 @@ class QueryBuilder {
 		$this->_('set',implode(',',
 			array_map(function($k,$v){
 				$k = '`' . implode('`.`',explode('.',$k)) . '`';
-				switch($v){
-					case null:
+				switch(true){
+					case is_null($v):
 						return "$k = NULL";
-					case true:
+					case $v === true:
 						return "$k = TRUE";
-					case false:
+					case $v === false:
 						return "$k = FALSE";
 					default:
 						return "$k = '$v'";

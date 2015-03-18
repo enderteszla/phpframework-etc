@@ -23,8 +23,6 @@ trait Singleton {
 	}
 }
 
-require_once SHELL_PATH . 'Error.php';
-
 trait Shell {
 	use Singleton;
 
@@ -54,14 +52,11 @@ trait Shell {
 	}
 }
 
-require_once SHELL_PATH . 'DB.php';
-
 trait Controller {
 	use Shell;
 
 	private function __init(){
-		$this->_('type',get_class($this));
-		Lang::_getInstance()->load($this->_('type'));
+		Lang::_getInstance()->load($this->_('type',get_class($this)));
 		return $this;
 	}
 
@@ -107,48 +102,6 @@ trait Controller {
 			}
 		}
 		return null;
-	}
-	public function _fetchImages(){
-		if(empty($this->_result)){
-			return $this;
-		}
-		if(is_assoc($this->_result)){
-			$ids = array_values(array_intersect_key(
-				$this->_result,
-				array_fill_keys(preg_grep('/^ImageID\d*$/',array_keys($this->_result)),true)
-			));
-		} else {
-			$ids = array();
-			foreach($this->_result as $element){
-				$ids = array_unique(array_merge($ids, array_values(array_intersect_key(
-					$element,
-					array_fill_keys(preg_grep('/^ImageID\d*$/',array_keys($element)),true)
-				))));
-			}
-		}
-		DB::_getInstance()->get('Image',false,$ids)->makeIndexedArray()->__($this->_('images',false));
-		if(is_assoc($this->_result)){
-			foreach(preg_grep('/^ImageID\d*$/',array_keys($this->_result)) as $key){
-				$n = str_replace('ImageID','',$key);
-				if(!is_null($this->_result[$key])) {
-					foreach ($this->_('images')[ $this->_result[ $key ] ] as $k => $v) {
-						$this->_result["Image$k$n"] = $v;
-					}
-				}
-			}
-		} else {
-			foreach($this->_result as &$element){
-				foreach(preg_grep('/^ImageID\d*$/',array_keys($element)) as $key){
-					$n = str_replace('ImageID','',$key);
-					if(!is_null($element[$key])) {
-						foreach ($this->_('images')[ $element[ $key ] ] as $k => $v) {
-							$element["Image$k$n"] = $v;
-						}
-					}
-				}
-			}
-		}
-		return $this;
 	}
 	public function _dropImages(){
 		if(empty($this->_result)){

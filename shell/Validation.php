@@ -118,7 +118,7 @@ class Validation {
 		if(empty($ids)){
 			return $this->addError('validation',5,array(stringify($ids)));
 		}
-		return $this->result($returnArray ? $ids : $ids[0]);
+		return $this->result($ids = $returnArray ? $ids : $ids[0]);
 	}
 	public function processLocale($lang){
 		if(!in_array($lang,config('locales','Default'))){

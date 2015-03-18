@@ -21,9 +21,8 @@ class Email {
 			$target,
 			$this->$template($data)->subject,
 			Output::_getInstance()
-				->setDataType('viewReturned')
 				->setSource(array_merge(array('subject' => $this->subject,'message' => $this->message),$data))
-				->expose(VIEW_PATH . "email.php")
+				->expose(VIEW_PATH . "email.php",true)
 				->__(),
 			$headers
 		);

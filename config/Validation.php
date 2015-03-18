@@ -10,6 +10,10 @@ $Config['rules']['Token'] = array(
 	'Type' => array('session','activate','restorePassword'),
 	'UserID' => '_id'
 );
+$Config['rules']['UpgradeDB'] = array(
+	'Type' => array('core','test'),
+	'Version' => '_text'
+);
 $Config['rules']['User'] = array(
 	'Email' => '_text',
 	'Password' => '_text',
@@ -20,6 +24,8 @@ $Config['rules']['User'] = array(
 $Config['flags']['Image'] = array(
 );
 $Config['flags']['Token'] = array(
+);
+$Config['flags']['UpgradeDB'] = array(
 );
 $Config['flags']['User'] = array(
 	'Active',

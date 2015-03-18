@@ -1,8 +1,5 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-require_once SHELL_PATH . 'QueryBuilder.php';
-require_once SHELL_PATH . 'Validation.php';
-
 class DB {
 	use Shell;
 
@@ -34,7 +31,7 @@ class DB {
 			return $this;
 		}
 		$data['ID'] = $id;
-		$QB = QueryBuilder::_getInstance();
+		$QB = QueryBuilder::_getInstance()->clean();
 		if(!($res = $this->link->query($QB->build('upsert',$table,$data)))){
 			return $this->addError('insert/update',$this->link->errno,$this->link->error);
 		}
@@ -65,7 +62,7 @@ class DB {
 		if($this->countErrors()) {
 			return $this;
 		}
-		$QB = QueryBuilder::_getInstance();
+		$QB = QueryBuilder::_getInstance()->clean();
 		if(!($res = $this->link->query($QB->build('set',$table,array('flags' => $flags,'ids' => $ids))))){
 			return $this->addError('set',$this->link->errno,$this->link->error);
 		}
@@ -121,6 +118,7 @@ class DB {
 				$result = null;
 			}
 		}
+		$res->free();
 		return $this->result($result);
 	}
 	public function drop($table,$ids,$lang = false){
@@ -131,9 +129,9 @@ class DB {
 		if($this->countErrors()) {
 			return $this;
 		}
-		$QB = QueryBuilder::_getInstance();
-		if($lang && !($res = $this->link->query($QB->build('drop',"`{$table}Lang`",array("`{$table}ID`"  => implode(',',$ids)))))){
-			return $this->addError('drop',$this->link->errno,$this->link->error);
+		$QB = QueryBuilder::_getInstance()->clean();
+		if($lang && !($res = $this->link->query($QB->build('drop', "`{$table}Lang`", array("`{$table}ID`" => implode(',', $ids)))))){
+			return $this->addError('drop', $this->link->errno, $this->link->error);
 		}
 		if(!($res = $this->link->query($QB->build('drop',"`{$table}`",array("`ID`"  => implode(',',$ids)))))){
 			return $this->addError('drop',$this->link->errno,$this->link->error);
@@ -150,14 +148,15 @@ class DB {
 		}
 		return $this->result($return);
 	}
-	public function test($query){
-		$result = array();
-		$res = $this->link->query($query);
-		if($res->num_rows > 0){
-			while($row = $res->fetch_assoc()){
-				$result[] = $row;
-			}
+	public function query($query){
+		if($res = $this->link->multi_query($query)) {
+			do {
+				if ($result = mysqli_store_result($this->link)) {
+					mysqli_free_result($result);
+				}
+				if (mysqli_more_results($this->link));
+			} while (mysqli_next_result($this->link));
 		}
-		return $result;
+		return $res;
 	}
 }
