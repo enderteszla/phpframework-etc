@@ -76,12 +76,12 @@ class DB {
 		if(!is_null($filter)) {
 			if (!is_array($filter) || !is_assoc($filter)) {
 				if(is_null($key)){
-					$key = 'ID';
+					$key = "{$table}.ID";
 				}
 				$filter = array($key => $filter);
 			}
-			if(array_key_exists('ID',$filter)){
-				$filter['ID'] = $v->processID($filter['ID'])->process($filter)->__();
+			if(array_key_exists("{$table}.ID",$filter)){
+				$filter["{$table}.ID"] = $v->processID($filter["{$table}.ID"])->process($filter)->__();
 			} else {
 				$v->process($filter);
 			}
@@ -103,9 +103,9 @@ class DB {
 		if(!($res = $this->link->query($QB->build('get',$table,$filter)))){
 			return $this->addError('select',$this->link->errno,$this->link->error);
 		}
-		if(is_array($filter) && array_key_exists('ID',$filter) && !is_array($filter['ID'])){
+		if(is_array($filter) && array_key_exists("{$table}.ID",$filter) && !is_array($filter["{$table}.ID"])){
 			if($res->num_rows == 0){
-				return $this->addError('select',0,array($table,$filter['ID']));
+				return $this->addError('select',0,array($table,$filter["{$table}.ID"]));
 			}
 			$result = $res->fetch_assoc();
 		} else {
