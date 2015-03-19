@@ -7,29 +7,41 @@ class UpgradeDB {
 		return $this->run();
 	}
 	public function test(){
-		removeContent(BASE_PATH . '/content/');
-		copyContent(BASE_PATH . '/test/content/',BASE_PATH . '/content/');
-		return $this->run()->run('test');
+		Error::_getInstance()->flush()->_('verbose','die');
+		if(is_null($this->run()->run('test')->__())){
+			lang('upToDate','UpgradeDB');
+			echo '<br /';
+			return $this;
+		}
+		if(removeContent(BASE_PATH . '/content/')) {
+			lang('removeContentSuccess','UpgradeDB');
+			echo '<br />';
+		}
+		if(copyContent(BASE_PATH . '/test/content/',BASE_PATH . '/content/')) {
+			lang('copyContentSuccess','UpgradeDB');
+			echo '<br />';
+		}
+		return $this;
 	}
 
 	private function run($type = 'core'){
+		$db = DB::_getInstance();
 		switch($type){
 			case 'test':
 				$sqlPath = BASE_PATH . '/test/sql/';
 				break;
 			default:
-				$sqlPath = BASE_PATH . '/sql/';
 				$type = 'core';
-		}
-		Error::_getInstance()->flush();
-		$db = DB::_getInstance();
-		if($type == "core") {
-			$db->query(file_get_contents($sqlPath . "UpgradeDB.sql"));
+				$sqlPath = BASE_PATH . '/sql/';
+				$db->query(file_get_contents($sqlPath . "UpgradeDB.sql"));
 		}
 		if(is_null($this->_get($type,'Type')->_eq()->__())){
 			$start = -1;
 			$id = null;
 		} else {
+			if($type == 'test'){
+				return $this->result(null);
+			}
 			$start = (int)$this->__()['Version'];
 			$id = $this->__()['ID'];
 		}

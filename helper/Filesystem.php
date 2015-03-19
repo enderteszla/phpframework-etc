@@ -2,7 +2,8 @@
 
 function copyContent($source,$target){
 	if(!is_writable($target)){
-		die("Target directory $target isn't writable. Change its permissions to proceed.");
+		Error::_getInstance()->add('filesystem',0,array($target));
+		return false;
 	}
 	$files = scandir($source);
 	foreach($files as $file){
@@ -20,11 +21,13 @@ function copyContent($source,$target){
 				copy($source . $file, $target . $file);
 		}
 	}
+	return true;
 }
 
 function removeContent($target){
 	if(!is_writable($target)){
-		die("Target directory $target isn't writable. Change its permissions to proceed.");
+		Error::_getInstance()->add('filesystem',0,array($target));
+		return false;
 	}
 	$files = scandir($target);
 	foreach($files as $file){
@@ -40,4 +43,5 @@ function removeContent($target){
 				unlink("{$target}{$file}");
 		}
 	}
+	return true;
 }

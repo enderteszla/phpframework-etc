@@ -22,6 +22,10 @@ $Lang['email'] = array(
 	'name'  => "Email Module Error",
 	0       => "Template doesn't exist"
 );
+$Lang['filesystem'] = array(
+	'name'  => "Filesystem Module Error",
+	0       => "Target directory %1\$s isn't writable. Change its permissions to proceed."
+);
 $Lang['image'] = array(
 	'name'  => "Image processing library error",
 	0       => "File not uploaded, please retry.",

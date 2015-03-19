@@ -10,7 +10,14 @@ class Error {
 	}
 
 	public function add($key,$code,$details = array()){
-		$this->errors[] = Lang::_getInstance()->getError($key,$code,$details);
+		$error = ($this->errors[] = Lang::_getInstance()->getError($key,$code,$details));
+		switch($this->_('verbose')){
+			case 'die':
+				die($error);
+			case 'echo':
+				echo $error;
+			default:
+		}
 		return $this;
 	}
 	public function flush(){

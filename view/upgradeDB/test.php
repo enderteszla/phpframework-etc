@@ -1,1 +1,2 @@
-<?php lang('testSuccess','UpdateDB');
+<?php lang('testSuccess','UpgradeDB');
+echo '<br />';

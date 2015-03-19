@@ -1,1 +1,2 @@
-<?php lang('coreSuccess','UpdateDB',array($Version));
+<?php lang('coreSuccess','UpgradeDB',array($Version));
+echo '<br />';
