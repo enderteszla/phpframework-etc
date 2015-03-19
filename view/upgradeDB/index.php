@@ -1,0 +1,1 @@
+<?php lang('coreSuccess','UpdateDB',array($Version));

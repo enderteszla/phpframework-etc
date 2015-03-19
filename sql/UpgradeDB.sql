@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS `UpgradeDB`(
+  `ID` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `Type` ENUM('test','core') NOT NULL,
+  `Version` CHAR(4),
+  UNIQUE KEY(`Type`)
+) ENGINE='InnoDB' DEFAULT CHARSET='utf8' COLLATE='utf8_general_ci';

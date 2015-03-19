@@ -1,0 +1,42 @@
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+
+/.hg/
+/.hgignore
+
+/.idea/
+
+/404.php
+
+/asset/image/
+/asset/javascript/*
+!/asset/javascript/jquery-1.11.2.min.js
+!/asset/javascript/jquery-owl.js
+/asset/stylesheet/
+
+/controller/*
+!/controller/.htaccess
+!/controller/Image.php
+!/controller/Token.php
+!/controller/UpgradeDB.php
+!/controller/User.php
+
+/lang/*/*
+!/lang/*/Error.php
+!/lang/*/UpgradeDB.php
+!/lang/*/User.php
+
+/sql/*
+!/sql/.htaccess
+!/sql/0000.sql
+!/sql/UpgradeDB.sql
+
+/test/*
+!/test/.htaccess
+
+/view/*
+!/view/upgradeDB/

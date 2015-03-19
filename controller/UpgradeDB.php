@@ -34,7 +34,7 @@ class UpgradeDB {
 			$id = $this->__()['ID'];
 		}
 		$last = 0;
-		foreach(array_filter(scandir($sqlPath),function($f){return !in_array($f,array('.','..','UpgradeDB.sql'));}) as $file){
+		foreach(preg_grep("/^\d{4}\.sql$/",scandir($sqlPath)) as $file) {
 			$last = (int)str_replace(".sql","",$file);
 			if($start < $last){
 				$db->query(file_get_contents($sqlPath . $file));
