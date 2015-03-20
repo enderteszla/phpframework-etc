@@ -6,7 +6,7 @@ function is_assoc($a){
 
 function keysUcFirst($a){
 	return array_combine(
-		array_map(function($k){return ucfirst($k);},array_keys($a)),
+		array_map("ucfirst",array_keys($a)),
 		array_values($a)
 	);
 }

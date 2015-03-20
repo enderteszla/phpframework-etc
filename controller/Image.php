@@ -5,35 +5,24 @@ class Image {
 
 	private $source = null;
 	private $filter = null;
+	private $path = null;
 
-	public function create($id = 0,$finalize = true){
+	public function create(){
 		Config::_getInstance()->load('Image');
-		$filter = explode('/',input('filter'));
-		switch(true){
-			case empty($filter):
-			case count($filter) == 1 && !array_key_exists($filter[0],config('filters','Image')):
-				$filter = config('filters','Image')['Default'];
-				$path = config('contentPath','Image') . "default/";
-				break;
-			case count($filter) == 1:
-				$filter = config('filters','Image')[input('filter')];
-				$path = config('contentPath','Image') . lcfirst(input('filter')) . "/";
-				break;
+
+		switch(func_num_args()){
+			case 0:
+				include_once BASE_PATH . '/404.php';
+			case 1:
+				return $this->processSource()->parse(input('filter'))->prepareFilter()->save(func_get_arg(0))->finalize();
 			default:
-				$filter = config('filters','Image');
-				$path = config('contentPath','Image');
-				foreach(explode('/',input('filter')) as $i){
-					if(array_key_exists($i,$filter)){
-						$filter = $filter[$i];
-						$path .= lcfirst($i) . "/";
-					} else {
-						$filter = config('filters','Image')['Default'];
-						$path = config('contentPath','Image') . "default/";
-						break;
-					}
+				$result = array();
+				foreach(func_get_args() as $i => $id){
+					$t = $this->processSource()->parse(input('filter') . "/$i")->prepareFilter()->save($id)->__();
+					$result = array_merge($result,array_combine(array_map(postfix(($i) ? $i + 1 : ""),array_keys($t)),array_values($t)));
 				}
+				return $this->result($result)->finalize();
 		}
-		return $this->processSource()->prepareFilter($filter)->save($path,$id)->finalize($finalize);
 	}
 	public function remove($ids){
 		switch(true){
@@ -90,8 +79,37 @@ class Image {
 		imagesavealpha($this->source['image'],true);
 		return $this;
 	}
-	private function prepareFilter($filter){
+	private function parse($filter){
+		$filter = explode('/',$filter);
+		switch(true){
+			case empty($filter):
+			case count($filter) == 1 && !array_key_exists($filter[0],config('filters','Image')):
+				$filter = config('filters','Image')['Default'];
+				$path = config('contentPath','Image') . "default/";
+				break;
+			case count($filter) == 1:
+				$filter = config('filters','Image')[input('filter')];
+				$path = config('contentPath','Image') . lcfirst(input('filter')) . "/";
+				break;
+			default:
+				$filter = config('filters','Image');
+				$path = config('contentPath','Image');
+				foreach(explode('/',input('filter')) as $i){
+					if(array_key_exists($i,$filter)){
+						$filter = $filter[$i];
+						$path .= lcfirst($i) . "/";
+					} else {
+						$filter = config('filters','Image')['Default'];
+						$path = config('contentPath','Image') . "default/";
+						break;
+					}
+				}
+		}
 		$this->filter = $filter;
+		$this->path = $path;
+		return $this;
+	}
+	private function prepareFilter(){
 		switch(true){
 			case $this->filter['w'] == "*" && $this->filter['h'] == "*":
 				$this->filter['w'] = $this->source['w'];
@@ -117,7 +135,7 @@ class Image {
 		}
 		return $this;
 	}
-	private function save($folder, $id = 0){
+	private function save($id = 0){
 		if($this->countErrors()){
 			return $this;
 		}
@@ -136,7 +154,7 @@ class Image {
 		if ($this->_upsert(array(
 			'Width' => $this->filter['w'],
 			'Height' => $this->filter['h'],
-			'URL' => $folder . "$id.{$this->filter['ext']}"
+			'URL' => $this->path . "$id.{$this->filter['ext']}"
 		), $id)->countErrors()
 		) {
 			return $this;
@@ -170,11 +188,9 @@ class Image {
 		unset($this->_result['image']);
 		return $this;
 	}
-	private function finalize($finalize){
-		if($finalize) {
-			imagedestroy($this->source['image']);
-			$this->source = null;
-		}
+	private function finalize(){
+		imagedestroy($this->source['image']);
+		$this->source = null;
 		return $this;
 	}
 }

@@ -103,7 +103,8 @@ class Validation {
 		}
 		return $this;
 	}
-	public function processID(&$ids){
+	public function processID(&$ids,$null = false){
+		$filter = $null ? '_idNull' : '_id';
 		if(is_array($ids)){
 			$returnArray = true;
 		} else {
@@ -111,7 +112,7 @@ class Validation {
 			$ids = array($ids);
 		}
 		foreach($ids as $i => &$id){
-			if(!call_user_func_array(array($this,'_id'),array(&$id))){
+			if(!call_user_func_array(array($this,$filter),array(&$id))){
 				unset($ids[$i]);
 			}
 		}
@@ -207,11 +208,15 @@ class Validation {
 	}
 
 	private function _id(&$field) {
-		if(is_null($field)){
-			return true;
-		}
 		$field = (preg_match("/^\d+$/","$field",$m)) ? $m[0] : 0;
 		return settype($field,'int') && $field > 0;
+	}
+	private function _idNull(&$field){
+		if(empty($field)){
+			$field = null;
+			return true;
+		}
+		return $this->_id($field);
 	}
 	private function _int(&$field) {
 		$field = (preg_match("/^\d+$/","$field",$m)) ? $m[0] : 0;
@@ -221,7 +226,7 @@ class Validation {
 		$field = htmlentities($field,ENT_QUOTES,"UTF-8");
 		return !empty($field);
 	}
-	private function _emptyText(&$field) {
+	private function _textEmpty(&$field) {
 		$field = htmlentities($field,ENT_QUOTES,"UTF-8");
 		return true;
 	}

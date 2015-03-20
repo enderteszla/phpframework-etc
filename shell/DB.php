@@ -15,7 +15,7 @@ class DB {
 	}
 
 	public function upsert($table,$lang = false,$data = null,$id = null){
-		$v = Validation::_getInstance()->setTable($table)->setLang()->setMode('required');
+		$v = Validation::_getInstance()->setTable($table)->setLang()->setMode('required')->processID($id,true);
 		if(!is_null($data)) {
 			if($lang){
 				$dataLang = $data;
@@ -23,9 +23,6 @@ class DB {
 			} else {
 				$v->process($data);
 			}
-		}
-		if(!is_null($id)){
-			$v->processID($id);
 		}
 		if($this->countErrors()){
 			return $this;

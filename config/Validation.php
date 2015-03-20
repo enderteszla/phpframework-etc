@@ -3,7 +3,7 @@
 $Config['rules']['Image'] = array(
 	'Width' => '_int',
 	'Height' => '_int',
-	'URL' => '_emptyText'
+	'URL' => '_textEmpty'
 );
 $Config['rules']['Token'] = array(
 	'Content' => '_text',
@@ -18,7 +18,7 @@ $Config['rules']['User'] = array(
 	'Email' => '_text',
 	'Password' => '_text',
 	'FirstName' => '_text',
-	'LastName' => '_emptyText'
+	'LastName' => '_textEmpty'
 );
 
 $Config['flags']['Image'] = array(
