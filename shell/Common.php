@@ -125,3 +125,104 @@ trait Controller {
 		return $this;
 	}
 }
+
+trait Content {
+	use Controller;
+
+	private $source = null;
+	private $filter = null;
+	private $path = null;
+
+	public function create(){
+		Config::_getInstance()->load($this->_('type'));
+		switch(func_num_args()){
+			case 0:
+				include_once BASE_PATH . '/404.php';
+			case 1:
+				return $this->prepareSource()->parse(input('filter'))->prepareFilter()->save(func_get_arg(0))->finalize();
+			default:
+				$result = array();
+				foreach(func_get_args() as $i => $id){
+					$t = $this->prepareSource()->parse(input('filter') . "/$i")->prepareFilter()->save($id)->__();
+					$result = array_merge($result,array_combine(array_map(postfix(($i) ? $i + 1 : ""),array_keys($t)),array_values($t)));
+				}
+				return $this->result($result)->finalize();
+		}
+	}
+	public function remove($ids){
+		switch(true){
+			case is_array($ids):
+				break;
+			case !is_null(json_decode($ids)):
+				$ids = json_decode($ids);
+				break;
+			default:
+				$ids = array($ids);
+		}
+		if($this->_get($ids)->_drop()->countErrors()){
+			return $this;
+		}
+		if(is_assoc($this->_result)){
+			@unlink(BASE_PATH . $this->_result['URL']);
+		} else {
+			foreach($this->_result as $file){
+				@unlink(BASE_PATH . $file['URL']);
+			}
+		}
+		return $this;
+	}
+
+	public function _skel($filter = null,$path = null){
+		if(is_null($filter)){
+			$filter = config('filters',$this->_('type'));
+			$path = BASE_PATH . config('contentPath','Default');
+		}
+		$result = true;
+		foreach($filter as $k => $v){
+			$path = "{$path}{$v}/";
+			mkdir($path);
+			if(!array_key_exists('.',$v)){
+				$result &= $this->_skel($v,$path);
+			}
+		}
+		return $result;
+	}
+
+	private function prepareSource(){
+		if(!is_null($this->source)){
+			return $this;
+		}
+		$this->source = array('tmp_name' => $_FILES[config('uploadFileIndex','Default')]['tmp_name']);
+		if(!is_uploaded_file($this->source['tmp_name'])){
+			return $this->addError('content',0);
+		}
+		return $this->processSource();
+	}
+	private function parse($filter){
+		$filter = explode('/',$filter);
+		switch(true){
+			case empty($filter):
+			case count($filter) == 1 && !array_key_exists($filter[0],config('filters',$this->_('type'))):
+				$this->filter = config('filters',$this->_('type'))['Default'];
+				$this->path = config('contentPath',$this->_('type')) . "default/";
+				return $this;
+			case count($filter) == 1:
+				$this->filter = config('filters',$this->_('type'))[$filter[0]];
+				$this->path = config('contentPath',$this->_('type')) . lcfirst($filter[0]) . "/";
+				return $this;
+			default:
+				$this->filter = config('filters',$this->_('type'));
+				$this->path = config('contentPath',$this->_('type'));
+				foreach($filter as $i){
+					if(array_key_exists($i,$this->filter)){
+						$this->filter = $this->filter[$i];
+						$this->path .= lcfirst($i) . "/";
+					} else {
+						$this->filter = config('filters',$this->_('type'))['Default'];
+						$this->path = config('contentPath',$this->_('type')) . "default/";
+					}
+				}
+				return $this;
+		}
+	}
+}

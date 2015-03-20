@@ -2,4 +2,4 @@
 
 $Config['die'] = false;
 $Config['echo'] = false;
-$Config['lf'] = '\r\n';
+$Config['lf'] = '<br />';

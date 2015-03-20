@@ -4,35 +4,69 @@ class UpgradeDB {
 	use Controller;
 
 	public function index(){
+		Config::_getInstance()->load('UpgradeDB');
+		Error::_getInstance()->flush()->_('verbose','die');
+
+		if(!removeContent(BASE_PATH . config('contentPath','Default'))){
+			lang('removeContentFailure','UpgradeDB');
+			exit();
+		}
+		lang('removeContentSuccess','UpgradeDB');
+		linefeed();
+
+		foreach(config('content','UpgradeDB') as $type){
+			Config::_getInstance()->load($type);
+			if(!$this->skeleton(config('filters',$type))){
+				lang('skeletonContentFailure','UpgradeDB',array($type));
+				exit();
+			}
+			lang('skeletonContentSuccess','UpgradeDB',array($type));
+			linefeed();
+		}
 		return $this->run();
 	}
 	public function test(){
+		Config::_getInstance()->load('UpgradeDB');
 		Error::_getInstance()->flush()->_('verbose','die');
-		if(is_null($this->run()->run('test')->__())){
+
+		if(is_null($this->index()->run('test')->__())){
 			lang('upToDate','UpgradeDB');
-			echo '<br /';
-			return $this;
+			exit();
 		}
-		if(removeContent(BASE_PATH . '/content/')) {
-			lang('removeContentSuccess','UpgradeDB');
-			echo '<br />';
+
+		if(!copyContent(BASE_PATH . config('testContentPath','UpgradeDB'),BASE_PATH . config('contentPath','Default'))) {
+			lang('copyContentFailure','UpgradeDB');
 		}
-		if(copyContent(BASE_PATH . '/test/content/',BASE_PATH . '/content/')) {
-			lang('copyContentSuccess','UpgradeDB');
-			echo '<br />';
-		}
+		lang('copyContentSuccess','UpgradeDB');
+		linefeed();
 		return $this;
 	}
 
+	private function skeleton($filter,$path = null){
+		if(is_null($path)){
+			$path = BASE_PATH . config('contentPath','Default');
+		}
+		$result = true;
+		foreach($filter as $k => $v){
+			if(is_dir($newPath = $path . lcfirst($k) ."/")){
+				continue;
+			}
+			mkdir($newPath);
+			if(!array_key_exists('.',$v)){
+				$result &= $this->skeleton($v,$newPath);
+			}
+		}
+		return $result;
+	}
 	private function run($type = 'core'){
 		$db = DB::_getInstance();
 		switch($type){
 			case 'test':
-				$sqlPath = BASE_PATH . '/test/sql/';
+				$sqlPath = BASE_PATH . config('testSqlPath','UpgradeDB');
 				break;
 			default:
 				$type = 'core';
-				$sqlPath = BASE_PATH . '/sql/';
+				$sqlPath = BASE_PATH . config('sqlPath','UpgradeDB');
 				$db->query(file_get_contents($sqlPath . "UpgradeDB.sql"));
 		}
 		if(is_null($this->_get($type,'Type')->_eq()->__())){

@@ -2,4 +2,4 @@
 
 $Config['helper'] = array('Array','Config','Debug','Filesystem','Input','Lang','String');
 $Config['lang'] = array('Error');
-$Config['config'] = array('Default');
+$Config['config'] = array('Default','Debug');

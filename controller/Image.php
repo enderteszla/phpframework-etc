@@ -1,112 +1,30 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
 class Image {
-	use Controller;
-
-	private $source = null;
-	private $filter = null;
-	private $path = null;
-
-	public function create(){
-		Config::_getInstance()->load('Image');
-
-		switch(func_num_args()){
-			case 0:
-				include_once BASE_PATH . '/404.php';
-			case 1:
-				return $this->processSource()->parse(input('filter'))->prepareFilter()->save(func_get_arg(0))->finalize();
-			default:
-				$result = array();
-				foreach(func_get_args() as $i => $id){
-					$t = $this->processSource()->parse(input('filter') . "/$i")->prepareFilter()->save($id)->__();
-					$result = array_merge($result,array_combine(array_map(postfix(($i) ? $i + 1 : ""),array_keys($t)),array_values($t)));
-				}
-				return $this->result($result)->finalize();
-		}
-	}
-	public function remove($ids){
-		switch(true){
-			case is_array($ids):
-				break;
-			case !is_null(json_decode($ids)):
-				$ids = json_decode($ids);
-				break;
-			default:
-				$ids = array($ids);
-		}
-		if($this->_get($ids)->_drop()->countErrors()){
-			return $this;
-		}
-		if(is_assoc($this->_result)){
-			@unlink(BASE_PATH . $this->_result['URL']);
-		} else {
-			foreach($this->_result as $image){
-				@unlink(BASE_PATH . $image['URL']);
-			}
-		}
-		return $this;
-	}
+	use Content;
 
 	private function processSource(){
-		if(!is_null($this->source)){
-			return $this;
-		}
-		$tmp_name = $_FILES[config('uploadFileIndex','Default')]['tmp_name'];
-		$this->source = array();
-		if(!is_uploaded_file($tmp_name)){
+		$fileInfo = finfo_open(FILEINFO_MIME);
+		if(!preg_match(':^image/(jpeg|png|gif);\ charset\=binary$:',finfo_file($fileInfo,$this->source['tmp_name']),$matches)){
 			return $this->addError('image',0);
 		}
-		$fileInfo = finfo_open(FILEINFO_MIME);
-		if(!preg_match(':^image/(jpeg|png|gif);\ charset\=binary$:',finfo_file($fileInfo,$tmp_name),$matches)){
-			return $this->addError('image',1);
-		}
 		$ext = str_replace('jpeg','jpg',$matches[1]);
-		list($this->source['w'],$this->source['h']) = getimagesize($tmp_name);
+		list($this->source['w'],$this->source['h']) = getimagesize($this->source['tmp_name']);
 		switch($ext){
 			case 'jpg':
-				$this->source['image'] = imagecreatefromjpeg($tmp_name);
-				unlink($tmp_name);
+				$this->source['image'] = imagecreatefromjpeg($this->source['tmp_name']);
+				unlink($this->source['tmp_name']);
 				return $this;
 			case 'png':
-				$this->source['image'] = imagecreatefrompng($tmp_name);
+				$this->source['image'] = imagecreatefrompng($this->source['tmp_name']);
 				break;
 			case 'gif':
-				$this->source['image'] = imagecreatefromgif($tmp_name);
+				$this->source['image'] = imagecreatefromgif($this->source['tmp_name']);
 				break;
 		}
-		unlink($tmp_name);
+		unlink($this->source['tmp_name']);
 		imagealphablending($this->source['image'],false);
 		imagesavealpha($this->source['image'],true);
-		return $this;
-	}
-	private function parse($filter){
-		$filter = explode('/',$filter);
-		switch(true){
-			case empty($filter):
-			case count($filter) == 1 && !array_key_exists($filter[0],config('filters','Image')):
-				$filter = config('filters','Image')['Default'];
-				$path = config('contentPath','Image') . "default/";
-				break;
-			case count($filter) == 1:
-				$filter = config('filters','Image')[input('filter')];
-				$path = config('contentPath','Image') . lcfirst(input('filter')) . "/";
-				break;
-			default:
-				$filter = config('filters','Image');
-				$path = config('contentPath','Image');
-				foreach(explode('/',input('filter')) as $i){
-					if(array_key_exists($i,$filter)){
-						$filter = $filter[$i];
-						$path .= lcfirst($i) . "/";
-					} else {
-						$filter = config('filters','Image')['Default'];
-						$path = config('contentPath','Image') . "default/";
-						break;
-					}
-				}
-		}
-		$this->filter = $filter;
-		$this->path = $path;
 		return $this;
 	}
 	private function prepareFilter(){

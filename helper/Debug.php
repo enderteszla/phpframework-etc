@@ -13,3 +13,8 @@ function debug($switch = null){
 function trace(){
 	return call_user_func_array(array(Debug::_getInstance(),'get'),func_get_args());
 }
+function linefeed($n = 1){
+	while($n -- > 0) {
+		echo config('lf', 'Debug');
+	}
+}

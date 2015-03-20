@@ -28,8 +28,8 @@ class DB {
 			return $this;
 		}
 		$data['ID'] = $id;
-		$QB = QueryBuilder::_getInstance()->clean();
-		if(!($res = $this->link->query($QB->build('upsert',$table,$data)))){
+		$QB = QueryBuilder::_getInstance();
+		if(!($res = $this->link->query($QB->clean()->build('upsert',$table,$data)))){
 			return $this->addError('insert/update',$this->link->errno,$this->link->error);
 		}
 		$id = is_null($id) ? $this->link->insert_id : $id;
@@ -37,7 +37,7 @@ class DB {
 			$dataLang["{$table}ID"] = $id;
 			$dataLang['Lang'] = $lang;
 			$QB->_('lang',true);
-			if(!($res = $this->link->query($QB->build('upsert',"{$table}Lang",$dataLang)))){
+			if(!($res = $this->link->query($QB->clean()->build('upsert',"{$table}Lang",$dataLang)))){
 				return $this->addError('insert/update',$this->link->errno,$this->link->error);
 			}
 		}
@@ -126,11 +126,11 @@ class DB {
 		if($this->countErrors()) {
 			return $this;
 		}
-		$QB = QueryBuilder::_getInstance()->clean();
-		if($lang && !($res = $this->link->query($QB->build('drop', "`{$table}Lang`", array("`{$table}ID`" => implode(',', $ids)))))){
+		$QB = QueryBuilder::_getInstance();
+		if($lang && !($res = $this->link->query($QB->clean()->build('drop', "`{$table}Lang`", array("`{$table}ID`" => implode(',', $ids)))))){
 			return $this->addError('drop', $this->link->errno, $this->link->error);
 		}
-		if(!($res = $this->link->query($QB->build('drop',"`{$table}`",array("`ID`"  => implode(',',$ids)))))){
+		if(!($res = $this->link->query($QB->clean()->build('drop',"`{$table}`",array("`ID`"  => implode(',',$ids)))))){
 			return $this->addError('drop',$this->link->errno,$this->link->error);
 		}
 		return $this;

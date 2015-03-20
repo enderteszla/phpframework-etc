@@ -15,6 +15,10 @@ $Lang['authentication'] = array(
 $Lang['connection'] = array(
 	'name'  => "Database Connection Error"
 );
+$Lang['content'] = array(
+	'name'  => "File uploading library error",
+	0       => "File not uploaded, please retry.",
+);
 $Lang['drop'] = array(
 	'name'  => "Data Deletion from Database Error"
 );
@@ -28,8 +32,7 @@ $Lang['filesystem'] = array(
 );
 $Lang['image'] = array(
 	'name'  => "Image processing library error",
-	0       => "File not uploaded, please retry.",
-	1       => "Uploaded file is not a valid jpeg/jpg/gif/png image, please retry."
+	0       => "Uploaded file is not a valid jpeg/jpg/gif/png image, please retry."
 );
 $Lang['insert/update'] = array(
 	'name'  => "Insert/Update Error"

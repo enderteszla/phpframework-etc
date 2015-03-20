@@ -3,5 +3,7 @@
 $Config['locales'] = array('ru','en');
 $Config['controller'] = 'Main';
 $Config['method'] = 'index';
+
+$Config['contentPath'] = "/content/";
 $Config['uploadFileIndex'] = 'file-upload';
 $Config['uploadFileMaxSize'] = '1000000';
