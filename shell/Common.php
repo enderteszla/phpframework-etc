@@ -204,22 +204,22 @@ trait Content {
 			case empty($filter):
 			case count($filter) == 1 && !array_key_exists($filter[0],config('filters',$this->_('type'))):
 				$this->filter = config('filters',$this->_('type'))['Default'];
-				$this->path = config('contentPath',$this->_('type')) . "default/";
+				$this->path = config('contentPath','Default') . "default/";
 				return $this;
 			case count($filter) == 1:
 				$this->filter = config('filters',$this->_('type'))[$filter[0]];
-				$this->path = config('contentPath',$this->_('type')) . lcfirst($filter[0]) . "/";
+				$this->path = config('contentPath','Default') . lcfirst($filter[0]) . "/";
 				return $this;
 			default:
 				$this->filter = config('filters',$this->_('type'));
-				$this->path = config('contentPath',$this->_('type'));
+				$this->path = config('contentPath','Default');
 				foreach($filter as $i){
 					if(array_key_exists($i,$this->filter)){
 						$this->filter = $this->filter[$i];
 						$this->path .= lcfirst($i) . "/";
 					} else {
 						$this->filter = config('filters',$this->_('type'))['Default'];
-						$this->path = config('contentPath',$this->_('type')) . "default/";
+						$this->path = config('contentPath','Default') . "default/";
 					}
 				}
 				return $this;
