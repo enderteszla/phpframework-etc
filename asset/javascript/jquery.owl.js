@@ -1,11 +1,14 @@
 /** jQuery own written library **/
 
-String.prototype.id = function(prefix){
-	return this.replace(RegExp('^.*' + (prefix ? prefix.replace(/(\\?)[\-]/,function($0,$1){return $1 ? $0 : '\\' + $0;}) : 'id') + '\\-(\\d+).*$'),'$1');
-};
-
-String.prototype.url = function(){
-	return this.replace(/^url\('?(.*)'?\)$/,"$1");
+$.owl = {
+    id: function (str,prefix) {
+        return str.replace(RegExp('^.*' + (prefix ? prefix.replace(/(\\?)[\-]/, function ($0, $1) {
+            return $1 ? $0 : '\\' + $0;
+        }) : 'id') + '\\-(\\d+).*$'), '$1');
+    },
+    url: function (str) {
+        return str.replace(/^url\('?(.*)'?\)$/, "$1");
+    }
 };
 /**
  * Почему? Зачем этот файл?

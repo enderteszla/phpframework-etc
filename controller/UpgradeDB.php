@@ -5,7 +5,7 @@ class UpgradeDB {
 
 	public function index(){
 		Config::_getInstance()->load('UpgradeDB');
-		Error::_getInstance()->flush()->_('verbose','die');
+		Error::_getInstance()->flush()->_('verbosity','die');
 
 		if(!removeContent(BASE_PATH . config('contentPath','Default'))){
 			lang('removeContentFailure','UpgradeDB');
@@ -27,7 +27,7 @@ class UpgradeDB {
 	}
 	public function test(){
 		Config::_getInstance()->load('UpgradeDB');
-		Error::_getInstance()->flush()->_('verbose','die');
+		Error::_getInstance()->flush()->_('verbosity','die');
 
 		if(is_null($this->index()->run('test')->__())){
 			lang('upToDate','UpgradeDB');

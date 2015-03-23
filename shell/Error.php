@@ -11,7 +11,7 @@ class Error {
 
 	public function add($key,$code,$details = array()){
 		$error = ($this->errors[] = Lang::_getInstance()->getError($key,$code,$details));
-		switch($this->_('verbose')){
+		switch($this->_('verbosity')){
 			case 'die':
 				die($error);
 			case 'echo':
