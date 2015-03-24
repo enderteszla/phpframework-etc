@@ -8,6 +8,6 @@ function prefix($prefix){
 
 function postfix($postfix){
 	return function($str) use($postfix){
-		return "{$postfix}{$str}";
+		return "{$str}{$postfix}";
 	};
 }

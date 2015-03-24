@@ -211,3 +211,57 @@ function delay(duration){
 	while((new Date()).getTime() < t + duration);
 	return true;
 }
+
+$.fn.autoResize = function(settings){
+	settings = $.extend({},settings);
+	var w, h, css = {};
+	this.children().not('.hidden').each(function(){
+		switch(settings.width){
+			case 'sum':
+				if(isNaN(w)){
+					w = 0;
+				}
+				w += $(this).width();
+				break;
+			case 'max':
+				if(isNaN(w)){
+					w = 0;
+				}
+				w = Math.max(w,$(this).width());
+				break;
+			case 'min':
+				if(isNaN(w)){
+					w = Infinity;
+				}
+				w = Math.min(w,$(this).width());
+				break;
+		}
+		switch(settings.height){
+			case 'sum':
+				if(isNaN(h)){
+					h = 0;
+				}
+				h += $(this).height();
+				break;
+			case 'max':
+				if(isNaN(h)){
+					h = 0;
+				}
+				h = Math.max(h,$(this).height());
+				break;
+			case 'min':
+				if(isNaN(h)){
+					h = Infinity;
+				}
+				h = Math.min(h,$(this).height());
+				break;
+		}
+	});
+	if(w){
+		css.width = w + 'px';
+	}
+	if(h){
+		css.height = h + 'px';
+	}
+	return this.css(css);
+};
