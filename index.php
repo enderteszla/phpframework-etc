@@ -31,7 +31,7 @@ if(!array_key_exists('PATH_INFO',$_SERVER) || !preg_match_all(':([^/]+)/?:',$_SE
 }
 $controllerInstance = $controller::_getInstance();
 
-if(!method_exists($controllerInstance,$method)){
+if(!is_callable(array($controllerInstance,$method))){
 	include_once BASE_PATH . '/404.php';
 }
 

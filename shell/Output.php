@@ -38,10 +38,11 @@ class Output {
 		}
 		ob_start();
 		include $view;
+		$content = ob_get_clean();
 		if($return){
-			return $this->result(ob_get_clean());
+			return $this->result($content);
 		}
-		ob_end_flush();
+		include VIEW_PATH . 'root.php';
 		return $this;
 	}
 	private function json(){
@@ -60,7 +61,6 @@ class Output {
 		return $this;
 	}
 	private function viewInJson($view){
-		ob_start();
-		return $this->view($view)->setSource(ob_get_clean())->json();
+		return $this->setSource($this->view($view,true)->__())->json();
 	}
 }
