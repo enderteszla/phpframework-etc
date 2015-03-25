@@ -5,6 +5,10 @@ class UpgradeDB {
 
 	public function index(){
 		Config::_getInstance()->load('UpgradeDB');
+		if(!config('enabled','UpgradeDB')){
+			lang('disabled','UpgradeDB');
+			exit();
+		}
 		Error::_getInstance()->flush()->_('verbosity','die');
 
 		if(!removeContent(BASE_PATH . config('contentPath','Default'))){
@@ -27,6 +31,10 @@ class UpgradeDB {
 	}
 	public function test(){
 		Config::_getInstance()->load('UpgradeDB');
+		if(!config('enabled','UpgradeDB')){
+			lang('disabled','UpgradeDB');
+			exit();
+		}
 		Error::_getInstance()->flush()->_('verbosity','die');
 
 		if(is_null($this->index()->run('test')->__())){

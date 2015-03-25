@@ -1,5 +1,7 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
+$Lang['disabled'] = "Запрещено вносить изменения.";
+
 $Lang['removeContentFailure'] = "Не удалось очистить директорию с динамическим контентом.";
 $Lang['removeContentSuccess'] = "Содержимое директории с динамическим контентом успешно очищено.";
 

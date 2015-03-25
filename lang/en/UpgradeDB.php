@@ -1,5 +1,7 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
+$Lang['disabled'] = "Any changes disabled.";
+
 $Lang['removeContentFailure'] = "Failed to clear content directory.";
 $Lang['removeContentSuccess'] = "Content directory successfully cleared.";
 
