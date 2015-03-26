@@ -7,7 +7,7 @@ class Input {
 
 	private function __init(){
 		Config::_getInstance()->load('Input');
-		$this->_vars = array_merge(config('Input'),$_REQUEST);
+		$this->_vars = array_merge(config('Input'),$_COOKIE,$_REQUEST);
 	}
 
 	public function getValue($key){

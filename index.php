@@ -29,23 +29,23 @@ if(!array_key_exists('PATH_INFO',$_SERVER) || !preg_match_all(':([^/]+)/?:',$_SE
 	$method = (array_key_exists(1,$m)) ? $m[1] : config('method','Default');
 	$args = (array_key_exists(2,$m)) ? array_slice($m,2) : array();
 }
-$controllerInstance = $controller::_getInstance();
-
-if(!is_callable(array($controllerInstance,$method))){
-	include_once BASE_PATH . '/404.php';
-}
 
 $data = array('Token' => false,'User' => false,'Controller' => $controller);
 /* <Data for="header"> */
 if(Token::_getInstance()->_get(input('token'),'Content')->_eq()->__($data['Token'])->_checkAuthorization()){
 	User::_getInstance()->_get($data['Token']['UserID'])->__($data['User']);
 }
-if(is_null($data['Token'])) {
+if(is_null($data['Token']) && is_null($data['Token'] = Token::_getInstance()->_get(config('token','Input'),'Content')->_eq()->__())) {
 	Error::_getInstance()->add('authentication',0);
 }
 /* </Data for="header"> */
 
+$controllerInstance = $controller::_getInstance();
+if(!is_callable(array($controllerInstance,$method))){
+	include_once BASE_PATH . '/404.php';
+}
 call_user_func_array(array($controllerInstance,$method),$args);
+
 Output::_getInstance()
 	->setSource(array_merge($data,is_null($controllerInstance->__()) ? array() : $controllerInstance->__()))
 	->expose(VIEW_PATH . lcfirst($controller) . "/$method.php");

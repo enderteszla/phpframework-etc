@@ -40,7 +40,7 @@ class User {
 	}
 	public function login(){
 		if(!input('json')){
-			include BASE_PATH . '/404.php';
+			return $this->result(array());
 		}
 		$email = input('email');
 		$password = input('password');
@@ -58,7 +58,8 @@ class User {
 		if($this->countErrors()){
 			return $this;
 		}
-		return $this->result($this->_('token')['Content']);
+		setcookie('token',$this->_('token')['Content'],null,'/');
+		return $this->result(array('Token' => $this->_('token')['Content']));
 	}
 	public function logout(){
 		if(!input('json')){
