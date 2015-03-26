@@ -126,11 +126,11 @@ class DB {
 		if($this->countErrors()) {
 			return $this;
 		}
-		$QB = QueryBuilder::_getInstance();;
-		if($lang && !($res = $this->link->query($QB->clean()->build('drop', "{$table}Lang", array("{$table}ID" => implode(',', $ids)))))){
+		$QB = QueryBuilder::_getInstance();
+		if($lang && !($res = $this->link->query($QB->clean()->build('drop', "{$table}Lang", array("{$table}ID" => $ids))))){
 			return $this->addError('drop', $this->link->errno, $this->link->error);
 		}
-		if(!($res = $this->link->query($QB->clean()->build('drop',$table,array("ID"  => implode(',',$ids)))))){
+		if(!($res = $this->link->query($qb = $QB->clean()->build('drop',$table,array("ID"  => $ids))))){
 			return $this->addError('drop',$this->link->errno,$this->link->error);
 		}
 		return $this;
