@@ -52,5 +52,6 @@
 !/test/.htaccess
 
 /view/*
+!/view/.htaccess
 !/view/root.php
 !/view/upgradeDB/

@@ -77,6 +77,9 @@ class UpgradeDB {
 				$sqlPath = BASE_PATH . config('sqlPath','UpgradeDB');
 				$db->query(file_get_contents($sqlPath . "UpgradeDB.sql"));
 		}
+		if(!is_dir($sqlPath)){
+			return $this->result(null);
+		}
 		if(is_null($this->_get($type,'Type')->_eq()->__())){
 			$start = -1;
 			$id = null;

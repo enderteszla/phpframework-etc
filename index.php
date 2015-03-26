@@ -35,12 +35,12 @@ if(!is_callable(array($controllerInstance,$method))){
 	include_once BASE_PATH . '/404.php';
 }
 
-$data = array('token' => false,'_user' => false);
+$data = array('Token' => false,'User' => false,'Controller' => $controller);
 /* <Data for="header"> */
-if(Token::_getInstance()->_get(input('token'),'Content')->_eq()->__($data['token'])->_checkAuthorization()){
-	User::_getInstance()->_get($data['token']['UserID'])->__($data['_user']);
+if(Token::_getInstance()->_get(input('token'),'Content')->_eq()->__($data['Token'])->_checkAuthorization()){
+	User::_getInstance()->_get($data['Token']['UserID'])->__($data['User']);
 }
-if(is_null($data['token'])) {
+if(is_null($data['Token'])) {
 	Error::_getInstance()->add('authentication',0);
 }
 /* </Data for="header"> */
