@@ -5,6 +5,9 @@ $Config['rules']['Image'] = array(
 	'Height' => '_int',
 	'URL' => '_textEmpty'
 );
+$Config['rules']['Role'] = array(
+	'Name' => '_text'
+);
 $Config['rules']['Token'] = array(
 	'Content' => '_text',
 	'Type' => array('session','activate','restorePassword'),
@@ -18,10 +21,13 @@ $Config['rules']['User'] = array(
 	'Email' => '_text',
 	'Password' => '_text',
 	'FirstName' => '_text',
-	'LastName' => '_textEmpty'
+	'LastName' => '_textEmpty',
+	'RoleID' => '_idNull'
 );
 
 $Config['flags']['Image'] = array(
+);
+$Config['flags']['Role'] = array(
 );
 $Config['flags']['Token'] = array(
 );
