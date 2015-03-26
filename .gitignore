@@ -26,6 +26,7 @@
 !/config/Loader.php
 !/config/Output.php
 !/config/PasswordHash.php
+!/config/Token.php
 !/config/UpgradeDB.php
 !/config/Validation.php
 

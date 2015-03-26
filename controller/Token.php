@@ -15,4 +15,12 @@ class Token {
 		} while(!is_null($this->_get($token,'Content')->_result));
 		return $token;
 	}
+	public function cleanExpired(){
+		if(!IS_CLI){
+			include_once BASE_PATH . '/404.php';
+		}
+		Config::_getInstance()->load('Token');
+		$eI = config('expireInterval','Token');
+		DB::_getInstance()->query("DELETE FROM `Token` WHERE `Created` < NOW() - INTERVAL $eI AND `ID` > 1");
+	}
 }

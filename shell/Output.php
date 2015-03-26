@@ -14,6 +14,9 @@ class Output {
 		return $this;
 	}
 	public function expose(){
+		if(IS_CLI){
+			return $this;
+		}
 		$dataType = input('json') ? 'json' :
 			($_SERVER['REQUEST_METHOD'] == 'POST' ? 'viewInJson' : 'view');
 		call_user_func_array(array($this,$dataType),func_get_args());

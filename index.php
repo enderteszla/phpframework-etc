@@ -1,4 +1,12 @@
-<?php define('BASE_PATH',$_SERVER['DOCUMENT_ROOT']);
+<?php switch(PHP_SAPI){
+	case 'cli':
+		define('BASE_PATH',__DIR__);
+		define('IS_CLI',true);
+		break;
+	default:
+		define('BASE_PATH',$_SERVER['DOCUMENT_ROOT']);
+		define('IS_CLI',false);
+}
 
 define('SHELL_PATH',BASE_PATH . '/shell/');
 define('CONFIG_PATH',BASE_PATH . '/config/');
