@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `User` (
   `Password` VARCHAR(80) NOT NULL,
   `FirstName` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' DEFAULT NULL,
   `LastName` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' DEFAULT NULL,
-  `RoleID` INT NOT NULL,
+  `RoleID` INT DEFAULT NULL,
   `Active` TINYINT(1) NOT NULL DEFAULT '0',
   UNIQUE KEY `Email` (`Email`),
   FOREIGN KEY(`RoleID`) REFERENCES `Role`(`ID`)
