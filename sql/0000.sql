@@ -7,8 +7,11 @@ CREATE TABLE IF NOT EXISTS `Image` (
 
 CREATE TABLE IF NOT EXISTS `Role` (
   `ID` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `Name` VARCHAR(80) NOT NULL
+  `Name` VARCHAR(80) NOT NULL,
+  UNIQUE KEY `Name` (`Name`)
 ) ENGINE='InnoDB' DEFAULT CHARSET='utf8';
+
+CALL AddUniqueKeyIfNotExists('Role','Name');
 
 CREATE TABLE IF NOT EXISTS `User` (
   `ID` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -22,6 +25,10 @@ CREATE TABLE IF NOT EXISTS `User` (
   FOREIGN KEY(`RoleID`) REFERENCES `Role`(`ID`)
 ) ENGINE='InnoDB' DEFAULT CHARSET='utf8';
 
+CALL AddUniqueKeyIfNotExists('User','Email');
+CALL Add_ModifyColumn('User','RoleID','INT DEFAULT NULL AFTER `LastName`');
+CALL AddForeignKeyIfNotExists('User','RoleID','Role','ID');
+
 CREATE TABLE IF NOT EXISTS `Token` (
   `ID` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `Content` CHAR(32) NOT NULL,
@@ -32,5 +39,8 @@ CREATE TABLE IF NOT EXISTS `Token` (
   FOREIGN KEY (`UserID`) REFERENCES `User` (`ID`)
 ) ENGINE='InnoDB' DEFAULT CHARSET='utf8';
 
-INSERT INTO `Token`(`Content`) VALUES('20c9af447201707825e83fb892a7cdc9');
-INSERT INTO `Role`(`Name`) VALUES('admin');
+CALL AddUniqueKeyIfNotExists('Token','Content');
+CALL AddForeignKeyIfNotExists('Token','UserID','User','ID');
+
+INSERT IGNORE INTO `Token`(`Content`) VALUES('20c9af447201707825e83fb892a7cdc9');
+INSERT IGNORE INTO `Role`(`Name`) VALUES('admin');
