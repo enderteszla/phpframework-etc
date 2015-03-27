@@ -15,6 +15,13 @@ class Token {
 		} while(!is_null($this->_get($token,'Content')->_result));
 		return $token;
 	}
+	public function _refresh(){
+		if(!is_assoc($this->_result)){
+			return $this;
+		}
+		DB::_getInstance()->query("UPDATE `Token` SET `Created` = NULL WHERE `ID` = {$this->_result['ID']};");
+		return $this;
+	}
 	public function cleanExpired(){
 		if(!IS_CLI){
 			include_once BASE_PATH . '/404.php';

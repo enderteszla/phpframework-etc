@@ -45,6 +45,8 @@ if(Token::_getInstance()->_get(input('token'),'Content')->_eq()->__($data['Token
 }
 if(is_null($data['Token']) && is_null($data['Token'] = Token::_getInstance()->_get(config('token','Input'),'Content')->_eq()->__())) {
 	Error::_getInstance()->add('authentication',0);
+} else {
+	Token::_getInstance()->_refresh();
 }
 /* </Data for="header"> */
 
