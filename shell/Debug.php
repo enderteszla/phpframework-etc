@@ -11,10 +11,16 @@ class Debug {
 
 	public function start(){
 		$this->traceFlag = true;
+		if(config('echo','Debug')){
+			echo config('initialSequence','Debug');
+		}
 		return $this;
 	}
 	public function stop(){
 		$this->traceFlag = false;
+		if(config('echo','Debug')){
+			echo config('terminalSequence','Debug');
+		}
 		return $this;
 	}
 	public function status(){
@@ -28,7 +34,12 @@ class Debug {
 		$this->traceFlag = false;
 		$return = "";
 		foreach(func_get_args() as $arg){
-			$return .= var_export($arg,config('echo','Debug')) . config('lf','Debug');
+			if(config('echo','Debug')){
+				print_r($arg);
+				linefeed();
+			} else {
+				$return .= print_r($arg,true);
+			}
 		}
 		$this->traceFlag = $status;
 		if(config('die','Debug')){

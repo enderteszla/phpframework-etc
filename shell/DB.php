@@ -47,15 +47,9 @@ class DB {
 		if(!is_array($ids)){
 			$ids = array($ids);
 		}
-		switch(true){
-			case !is_array($flags):
-				$flags = array($flags => $value);
-				break;
-			case !is_assoc($flags):
-				$flags = array_fill_keys($flags,$value);
-				break;
-		}
-		Validation::_getInstance()->processID($ids)->processFlags($flags);
+		$flags = is_array($flags) ? $flags : array($flags);
+		$flags = is_assoc($flags) ? $flags : array_fill_keys($flags,$value);
+		Validation::_getInstance()->setTable($table)->setLang()->processID($ids)->processFlags($flags);
 		if($this->countErrors()) {
 			return $this;
 		}
@@ -67,9 +61,17 @@ class DB {
 	}
 	public function get($table,$lang = false,$filter = null,$key = null,$with = null,$aggregate = null){
 		$this->result(null);
-		$v = Validation::_getInstance()->setTable($table)->setLang($lang ? true : null)->setMode('flags');
+		$v = Validation::_getInstance()->clean()->setTable($table)->setLang($lang ? true : null)->setMode('flags');
 		$QB = QueryBuilder::_getInstance()->clean();
 		$QB->_('lang',$lang);
+		if($with){
+			$v->processWith($with);
+			$QB->with($table,$with);
+		}
+		if($aggregate){
+			$v->processAggregate($table,$aggregate);
+			$QB->aggregate($aggregate);
+		}
 		if(!is_null($filter)) {
 			if (!is_array($filter) || !is_assoc($filter)) {
 				if(is_null($key)){
@@ -85,14 +87,6 @@ class DB {
 		}
 		if($lang) {
 			$v->processLocale($filter["{$table}Lang.Lang"] = $lang);
-		}
-		if($with){
-			$v->processWith($with);
-			$QB->with($table,$with);
-		}
-		if($aggregate){
-			$v->processAggregate($aggregate);
-			$QB->aggregate($table,$aggregate);
 		}
 		if($this->countErrors()){
 			return $this;

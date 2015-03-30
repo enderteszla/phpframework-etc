@@ -35,13 +35,12 @@ class QueryBuilder {
 		return $this;
 	}
 
-	public function aggregate($table,$aggregate){
-		foreach($aggregate as $item){
-			$this->_('join')[] = "`{$item['Table']}` ON(`{$item['Table']}`.`{$table}ID` = `{$table}`.`ID`)";
-			$this->_('where')[] = "{$item['Function']} `{$item['Alias']}`";
-		}
-		if(!empty($aggregate)) {
-			$this->_('groupBy')[] = "`{$table}`.`ID`";
+	public function aggregate($aggregate){
+		foreach($aggregate as $alias => $array){
+			$this->_('join')[] = "`{$array['JoiningTable']}` `{$alias}` ON(`{$alias}`.`{$array['JoinedTable']}ID` = `{$array['JoinedTableAlias']}`.`ID`)";
+			foreach($array['Fields'] as $field){
+				$this->_('select')[] = "{$field['Function']} `{$field['Alias']}`";
+			}
 		}
 		return $this;
 	}
@@ -78,7 +77,7 @@ class QueryBuilder {
 		$this->select($table,$this->_('lang') ? array("`{$table}`.*","`{$table}Lang`.*") : array("`{$table}`.*"));
 		$this->from($table,$this->_('lang') ? array("`{$table}Lang` ON(`{$table}Lang`.`{$table}ID` = `{$table}`.`ID`)") : array());
 		$this->where(empty($data) ? array() : $data);
-		$this->groupBy();
+		$this->groupBy($table);
 		return "
 		{$this->_('select')}
 		{$this->_('from')}
@@ -154,19 +153,34 @@ class QueryBuilder {
 					case is_null($v):
 						return "$k IS NULL";
 					case $v === true:
-						return "$k = true";
+						return "$k = TRUE";
 					case $v === false:
-						return "$k = false";
+						return "$k = FALSE";
 					case is_array($v):
-						return "$k IN('" . implode('\',\'',$v) . "')";
+						$return = "$k IN(" . implode(',',array_map(function($value){
+							switch(true){
+								case is_null($value):
+									return 'NULL';
+								case $value === false:
+									return 'FALSE';
+								case $value === true:
+									return 'TRUE';
+								default:
+									return "'$value'";
+							}
+						},$v)) . ")";
+						if(in_array(null,$v,true)){
+							return "($k IS NULL OR $return)";
+						}
+						return $return;
 					default:
 						return "$k = '$v'";
 				}
 			},array_keys($this->_('where')),array_values($this->_('where')))));
 		return $this;
 	}
-	private function groupBy(){
-		$this->_('groupBy',empty($this->_('groupBy')) ? "" : "GROUP BY " . implode(', ',$this->_('groupBy')));
+	private function groupBy($table){
+		$this->_('groupBy',"GROUP BY `{$table}`.`ID`");
 		return $this;
 	}
 }

@@ -21,7 +21,8 @@ class User {
 			'Email' => $email,
 			'Password' => PasswordHash::_getInstance()->create_hash($password),
 			'FirstName' => $firstName,
-			'LastName' => $lastName
+			'LastName' => $lastName,
+			'RoleID' => null
 		))->countErrors()){
 			return $this;
 		}
@@ -103,7 +104,8 @@ class User {
 				'Email' => $this->_result['Email'],
 				'Password' => PasswordHash::_getInstance()->create_hash(input('password')),
 				'FirstName' => $this->_result['FirstName'],
-				'LastName' => $this->_result['LastName']
+				'LastName' => $this->_result['LastName'],
+				'RoleID' => $this->_result['RoleID']
 			))->countErrors()){
 				return $this;
 			}

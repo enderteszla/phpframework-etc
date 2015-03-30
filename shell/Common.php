@@ -64,7 +64,7 @@ trait Controller {
 		return $this->result(DB::_getInstance()->upsert($this->_('type'), $this->_('lang'), $data, $id)->__());
 	}
 	public function _set($ids,$value = true,$field = 'Active'){
-		DB::_getInstance()->set($this->_('type'), $ids, $value, $field);
+		DB::_getInstance()->set($this->_('type'), $ids, $field, $value);
 		return $this;
 	}
 	public function _get($filter = null,$key = null,$with = null, $aggregate = null){

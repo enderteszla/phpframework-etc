@@ -57,5 +57,5 @@ if(!is_callable(array($controllerInstance,$method))){
 call_user_func_array(array($controllerInstance,$method),$args);
 
 Output::_getInstance()
-	->setSource(array_merge($data,is_null($controllerInstance->__()) ? array() : $controllerInstance->__()))
+	->setSource(array_merge($data,!is_assoc($controllerInstance->__()) ? array() : $controllerInstance->__()))
 	->expose(VIEW_PATH . lcfirst($controller) . "/$method.php");
