@@ -15,7 +15,7 @@ class DB {
 	}
 
 	public function upsert($table,$lang = false,$data = null,$id = null){
-		$v = Validation::_getInstance()->setTable($table)->setLang()->setMode('required')->processID($id,true);
+		$v = Validation::_getInstance()->clean()->setTable($table)->setLang()->setMode('required')->processID($id,true);
 		if(!is_null($data)) {
 			if($lang){
 				$dataLang = $data;
@@ -49,7 +49,7 @@ class DB {
 		}
 		$flags = is_array($flags) ? $flags : array($flags);
 		$flags = is_assoc($flags) ? $flags : array_fill_keys($flags,$value);
-		Validation::_getInstance()->setTable($table)->setLang()->processID($ids)->processFlags($flags);
+		Validation::_getInstance()->clean()->setTable($table)->setLang()->processID($ids)->processFlags($flags);
 		if($this->countErrors()) {
 			return $this;
 		}
@@ -116,7 +116,7 @@ class DB {
 		if(!is_array($ids)){
 			$ids = array($ids);
 		}
-		Validation::_getInstance()->processID($ids);
+		Validation::_getInstance()->clean()->processID($ids);
 		if($this->countErrors()) {
 			return $this;
 		}

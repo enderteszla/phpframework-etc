@@ -1,6 +1,6 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-$Config['enabled'] = true;
+$Config['enabled'] = false;
 $Config['content'] = array('Image');
 $Config['sqlPath'] = '/sql/';
 $Config['testContentPath'] = "/test/content/";

@@ -55,7 +55,8 @@ if(!is_callable(array($controllerInstance,$method))){
 	include_once BASE_PATH . '/404.php';
 }
 call_user_func_array(array($controllerInstance,$method),$args);
+$result = $controllerInstance->__();
 
 Output::_getInstance()
-	->setSource(array_merge($data,!is_assoc($controllerInstance->__()) ? array() : $controllerInstance->__()))
+	->setSource(array_merge($data,!is_assoc($result) ? array() : $result))
 	->expose(VIEW_PATH . lcfirst($controller) . "/$method.php");
