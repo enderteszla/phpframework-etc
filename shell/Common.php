@@ -38,6 +38,10 @@ trait Shell {
 		Error::_getInstance()->add($key,$code,$details);
 		return $this;
 	}
+	private function flushErrors(){
+		Error::_getInstance()->flush();
+		return $this;
+	}
 
 	private function result($result){
 		$this->_result = $result;
