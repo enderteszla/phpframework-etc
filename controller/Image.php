@@ -34,22 +34,22 @@ class Image {
 				$this->filter['h'] = $this->source['h'];
 				break;
 			case $this->filter['w'] == "*":
-				$this->filter['w'] = $this->filter['h'] * $this->source['w'] / $this->source['h'];
+				$this->filter['w'] = round($this->filter['h'] * $this->source['w'] / $this->source['h']);
 				break;
 			case $this->filter['h'] == "*":
-				$this->filter['h'] = $this->filter['w'] * $this->source['h'] / $this->source['w'];
+				$this->filter['h'] = round($this->filter['w'] * $this->source['h'] / $this->source['w']);
 				break;
 		}
 		if($this->source['w'] / $this->filter['w'] - $this->source['h'] / $this->filter['h'] > 0){
 			$this->filter['x'] = round(($this->source['w'] - $this->source['h'] * $this->filter['w'] / $this->filter['h']) / 2);
 			$this->filter['y'] = 0;
-			$this->filter['ws'] = $this->source['h'] * $this->filter['w'] / $this->filter['h'];
+			$this->filter['ws'] = round($this->source['h'] * $this->filter['w'] / $this->filter['h']);
 			$this->filter['hs'] = $this->source['h'];
 		} else {
 			$this->filter['x'] = 0;
 			$this->filter['y'] = round(($this->source['h'] - $this->source['w'] * $this->filter['h'] / $this->filter['w']) / 2);
 			$this->filter['ws'] = $this->source['w'];
-			$this->filter['hs'] = $this->source['w'] * $this->filter['h'] / $this->filter['w'];
+			$this->filter['hs'] = round($this->source['w'] * $this->filter['h'] / $this->filter['w']);
 		}
 		return $this;
 	}
