@@ -10,6 +10,7 @@
 
 /.idea/
 
+/asset/font/
 /asset/image/
 /asset/javascript/*
 !/asset/javascript/jquery-1.11.2.min.js

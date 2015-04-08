@@ -26,18 +26,22 @@ class User {
 		))->countErrors()){
 			return $this;
 		}
-		Token::_getInstance()->_upsert(array(
-			'Content' => Token::_getInstance()->_generate(),
-			'Type' => 'activate',
-			'UserID' => $this->_result['ID']
-		))->__($this->_('token',false));
-		Email::_getInstance()
-			->send($email,'activate',array('token' => $this->_('token')['Content']));
-		if($this->countErrors()) {
-			Token::_getInstance()->_drop();
-			return $this->_drop();
+		if(config('accountActivation','Default')){
+			Token::_getInstance()->_upsert(array(
+				'Content' => Token::_getInstance()->_generate(),
+				'Type' => 'activate',
+				'UserID' => $this->_result['ID']
+			))->__($this->_('token',false));
+			Email::_getInstance()
+				->send($email,'activate',array('token' => $this->_('token')['Content']));
+			if($this->countErrors()) {
+				Token::_getInstance()->_drop();
+				return $this->_drop();
+			}
+			return $this->result(Lang::_getInstance()->getValue('activationSent','User'));
+		} else {
+			return $this->_set($this->_result['ID']);
 		}
-		return $this->result(Lang::_getInstance()->getValue('activationSent','User'));
 	}
 	public function login(){
 		if(!input('json')){
