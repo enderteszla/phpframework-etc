@@ -1,10 +1,10 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
 function debug($switch = null){
-	switch($switch){
-		case true:
+	switch(true){
+		case $switch === true:
 			return Debug::_getInstance()->start();
-		case false:
+		case $switch === false:
 			return Debug::_getInstance()->stop();
 		default:
 			return Debug::_getInstance()->status();

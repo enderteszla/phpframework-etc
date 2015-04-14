@@ -3,28 +3,17 @@
 class Validation {
 	use Shell;
 
-	private $table = null;
 	private $lang = null;
 	private $mode = null;
 	private $rules = null;
 
-	public function __init(){
+	private function __init(){
 		$this->mode = array();
 		Config::_getInstance()->load('Validation');
 	}
 
 	public function clean(){
-		$this->table = null;
 		$this->rules = array();
-		return $this;
-	}
-	public function setTable($table){
-		if(!array_key_exists($table,config('rules','Validation'))
-			|| !array_key_exists($table,config('flags','Validation'))){
-			$this->addError('validation',0,array($table));
-		} else {
-			$this->table = $table;
-		}
 		return $this;
 	}
 	public function setLang($lang = null){
@@ -44,20 +33,20 @@ class Validation {
 		}
 		return $this;
 	}
-	public function process(&$data){
+	public function process($table,&$data){
 		switch(true){
 			case $this->lang === true: // Locale-sensitive data available; use both.
-				$rules = array_merge(config('rules','Validation')[$this->table . 'Lang'],
-					config('rules','Validation')[$this->table],$this->rules);
+				$rules = array_merge(config('rules','Validation')[$table . 'Lang'],
+					config('rules','Validation')[$table],$this->rules);
 				break;
 			case $this->lang === false: // Locale-sensitive data available; use only it.
-				$rules = array_merge(config('rules','Validation')[$this->table . 'Lang'],$this->rules);
+				$rules = array_merge(config('rules','Validation')[$table . 'Lang'],$this->rules);
 				break;
 			default: // Locale-sensitive data unavailable.
-				$rules = array_merge(config('rules','Validation')[$this->table],$this->rules);
+				$rules = array_merge(config('rules','Validation')[$table],$this->rules);
 		}
 		if(in_array('flags',$this->mode)){
-			$rules = array_merge(array_fill_keys(config('flags','Validation')[$this->table],'_bool'),$rules);
+			$rules = array_merge(array_fill_keys(config('flags','Validation')[$table],'_bool'),$rules);
 		}
 		foreach ($data as $key => &$value) {
 			switch(true){
@@ -131,51 +120,50 @@ class Validation {
 		}
 		return $this;
 	}
-	public function processFlags(&$flags){
+	public function processFlags($table,&$flags){
 		foreach($flags as $k => &$v){
-			if(!in_array($k,config('flags','Validation')[$this->table])
+			if(!in_array($k,config('flags','Validation')[$table])
 				|| !call_user_func_array(array($this,'_bool'),array(&$v))){
 				unset($flags[$k]);
 			}
 		}
 		return $this;
 	}
-	public function processWith(&$with){
+	public function processWith($joinedTable,&$with){
 		$return = array();
-		foreach(is_array($with) ? $with : array($with) as $item){
+		foreach(is_array($with) ? $with : array($with) as $k => &$v){
+			$item = is_numeric($k) ? $v : $k;
 			if(!array_key_exists($item,config('rules','Validation'))
 				|| !array_key_exists($item,config('flags','Validation'))){
 				continue;
 			}
-			foreach(preg_grep("/^{$item}ID\d*$/",array_keys(config('rules','Validation')[$this->table])) as $key) {
+			foreach(preg_grep("/^{$item}ID\d*$/",array_keys(config('rules','Validation')[end(explode('<',$joinedTable))])) as $key) {
 				$d = str_replace("{$item}ID",'',$key);
 				$fields = array();
 				foreach (array_merge(array_fill_keys(config('flags','Validation')[$item],'_bool'),
 					config('rules','Validation')[$item]) as $key => $rule) {
-					$fields[$key] = "{$item}{$key}{$d}";
-					$this->rules[$fields[$key]] = $rule;
+					$fields[$key] = implode('<',array_slice(explode('<',"{$joinedTable}<{$item}{$key}{$d}"),1));
+					$this->rules["{$joinedTable}<{$item}{$d}.{$key}"] = $rule;
 				}
+				$return["{$joinedTable}<{$item}{$d}"] = array(
+					'JoinedTable' => $joinedTable,
+					'Table' => $item,
+					'Key' => "{$item}ID{$d}",
+					'Fields' => $fields
+				);
 				if(!is_null($this->lang) && array_key_exists($item . 'Lang',config('rules','Validation'))){
-					$langFields = array();
-					foreach (config('rules','Validation')[$item . 'Lang'] as $key => $rule) {
-						$langFields[$key] = "{$item}{$key}{$d}";
-						$this->rules[$langFields[$key]] = $rule;
+					$return["{$joinedTable}<{$item}{$d}"]['LangAlias'] = "{$joinedTable}<{$item}Lang{$d}";
+					$return["{$joinedTable}<{$item}{$d}"]['LangFields'] = array();
+					foreach(config('rules','Validation')[$item . 'Lang'] as $key => $rule) {
+						$return["{$joinedTable}<{$item}{$d}"]['LangFields'][$key] = implode('<',array_slice(explode('<',"{$joinedTable}<{$item}{$key}{$d}"),1));
+						$this->rules["{$joinedTable}<{$item}Lang{$d}.{$key}"] = $rule;
 					}
-					$return[] = array(
-						'Table' => $item,
-						'Key' => "{$item}ID{$d}",
-						'Alias' => "{$item}{$d}",
-						'LangAlias' => "{$item}Lang{$d}",
-						'Fields' => $fields,
-						'LangFields' => $langFields
-					);
-				} else {
-					$return[] = array(
-						'Table' => $item,
-						'Key' => "{$item}ID{$d}",
-						'Alias' => "{$item}{$d}",
-						'Fields' => $fields
-					);
+				}
+				if(!is_numeric($k)) {
+					$v_ = $v;
+					$this->processWith("{$joinedTable}<{$item}{$d}", $v_);
+					$return = array_merge($return, $v_);
+					unset($v_);
 				}
 			}
 		}
@@ -198,7 +186,7 @@ class Validation {
 				$rules = array_merge(array_fill_keys(config('flags','Validation')[$joiningTable],'_bool'),$rules);
 			}
 			$rules['ID'] = '_id';
-			$alias = "{$joinedTable}/{$joiningTable}";
+			$alias = "{$joinedTable}>{$joiningTable}";
 			foreach($rules as $key => $rule){
 				$this->rules["{$alias}.{$key}"] = $rule;
 			}
@@ -216,13 +204,10 @@ class Validation {
 				if (!array_key_exists($argument, $rules) || !in_array($function, config('functions', 'Validation'))) {
 					continue;
 				}
-				$fields[] = array(
-					'Alias' => (array_key_exists(4, $m)) ? $m[4] : $signature,
-					'Function' => "$function(`$alias`.`$argument`)",
-				);
+				$fields[(array_key_exists(4, $m)) ? $m[4] : $signature] = "$function(`$alias`.`$argument`)";
 			}
 			$return[$alias] = array(
-				'JoinedTable' => end(explode('/',$joinedTable)),
+				'JoinedTable' => end(explode('>',$joinedTable)),
 				'JoinedTableAlias' => $joinedTable,
 				'JoiningTable' => $joiningTable,
 				'Fields' => $fields

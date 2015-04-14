@@ -34,7 +34,7 @@ $Config['flags']['Token'] = array(
 $Config['flags']['UpgradeDB'] = array(
 );
 $Config['flags']['User'] = array(
-	'Active',
+	'Active'
 );
 
 $Config['functions'] = array('COUNT','MAX','MIN','GROUP_CONCAT');

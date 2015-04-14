@@ -15,13 +15,13 @@ class DB {
 	}
 
 	public function upsert($table,$lang = false,$data = null,$id = null){
-		$v = Validation::_getInstance()->clean()->setTable($table)->setLang()->setMode('required')->processID($id,true);
+		$v = Validation::_getInstance()->clean()->setLang()->setMode('required')->processID($id,true);
 		if(!is_null($data)) {
 			if($lang){
 				$dataLang = $data;
-				$v->process($data)->setLang(false)->process($dataLang)->processLocale($lang);
+				$v->process($table,$data)->setLang(false)->process($table,$dataLang)->processLocale($lang);
 			} else {
-				$v->process($data);
+				$v->process($table,$data);
 			}
 		}
 		if($this->countErrors()){
@@ -49,7 +49,7 @@ class DB {
 		}
 		$flags = is_array($flags) ? $flags : array($flags);
 		$flags = is_assoc($flags) ? $flags : array_fill_keys($flags,$value);
-		Validation::_getInstance()->clean()->setTable($table)->setLang()->processID($ids)->processFlags($flags);
+		Validation::_getInstance()->clean()->setLang()->processID($ids)->processFlags($table,$flags);
 		if($this->countErrors()) {
 			return $this;
 		}
@@ -61,12 +61,12 @@ class DB {
 	}
 	public function get($table,$lang = false,$filter = null,$key = null,$with = null,$aggregate = null){
 		$this->result(null);
-		$v = Validation::_getInstance()->clean()->setTable($table)->setLang($lang ? true : null)->setMode('flags');
+		$v = Validation::_getInstance()->clean()->setLang($lang ? true : null)->setMode('flags');
 		$QB = QueryBuilder::_getInstance()->clean();
 		$QB->_('lang',$lang);
 		if($with){
-			$v->processWith($with);
-			$QB->with($table,$with);
+			$v->processWith($table,$with);
+			$QB->with($with);
 		}
 		if($aggregate){
 			$v->processAggregate($table,$aggregate);
@@ -80,9 +80,9 @@ class DB {
 				$filter = array($key => $filter);
 			}
 			if(array_key_exists("{$table}.ID",$filter)){
-				$filter["{$table}.ID"] = $v->processID($filter["{$table}.ID"])->process($filter)->__();
+				$filter["{$table}.ID"] = $v->processID($filter["{$table}.ID"])->process($table,$filter)->__();
 			} else {
-				$v->process($filter);
+				$v->process($table,$filter);
 			}
 		}
 		if($lang) {
@@ -91,26 +91,20 @@ class DB {
 		if($this->countErrors()){
 			return $this;
 		}
-		if(!($res = $this->link->query($QB->build('get',$table,$filter)))){
-			return $this->addError('select',$this->link->errno,$this->link->error);
-		}
-		if(is_array($filter) && array_key_exists("{$table}.ID",$filter) && !is_array($filter["{$table}.ID"])){
-			if($res->num_rows == 0){
+		$result = Result::_getInstance()->fetch(
+			$this->link->query($QB->build('get',$table,$filter)),
+			is_array($filter) && array_key_exists("{$table}.ID",$filter) && !is_array($filter["{$table}.ID"])
+		);
+		switch(true){
+			case $result === null:
+				return $this->addError('select',$this->link->errno,$this->link->error);
+			case $result === false:
 				return $this->addError('select',0,array($table,$filter["{$table}.ID"]));
-			}
-			$result = $res->fetch_assoc();
-		} else {
-			if($res->num_rows > 0) {
-				$result = array();
-				while($row = $res->fetch_assoc()){
-					$result[] = $row;
-				}
-			} else {
-				$result = null;
-			}
+			case $result === array():
+				return $this->result(null);
+			default:
+				return $this->result($result);
 		}
-		$res->free();
-		return $this->result($result);
 	}
 	public function drop($table,$ids,$lang = false){
 		if(!is_array($ids)){

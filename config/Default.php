@@ -1,6 +1,6 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-$Config['accountActivation'] = false;
+$Config['accountActivation'] = true;
 
 $Config['locales'] = array('ru','en');
 $Config['controller'] = 'Main';

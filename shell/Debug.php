@@ -32,13 +32,14 @@ class Debug {
 		}
 		$status = $this->traceFlag;
 		$this->traceFlag = false;
+		$function = config('function','Debug');
 		$return = "";
 		foreach(func_get_args() as $arg){
 			if(config('echo','Debug')){
-				print_r($arg);
+				$function($arg);
 				linefeed();
 			} else {
-				$return .= print_r($arg,true);
+				$return .= $function($arg,true);
 			}
 		}
 		$this->traceFlag = $status;

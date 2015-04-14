@@ -18,18 +18,18 @@ class QueryBuilder {
 		return $this;
 	}
 
-	public function with($table,$with){
-		foreach($with as $item){
-			foreach($item['Fields'] as $field => $alias){
-				$this->_('select')[] = "`{$item['Alias']}`.`$field` `$alias`";
+	public function with($with){
+		foreach ($with as $alias => $array) {
+			foreach($array['Fields'] as $key => $fieldAlias){
+				$this->_('select')[] = "`$alias`.`$key` `$fieldAlias`";
 			}
-			$this->_('join')[] = "`{$item['Table']}` `{$item['Alias']}` ON(`{$table}`.`{$item['Key']}` = `{$item['Alias']}`.`ID`)";
-			if(array_key_exists('LangFields',$item)){
-				foreach($item['LangFields'] as $field => $alias){
-					$this->_('select')[] = "`{$item['LangAlias']}`.`$field` `$alias`";
+			$this->_('join')[] = "`{$array['Table']}` `$alias` ON(`{$array['JoinedTable']}`.`{$array['Key']}` = `$alias`.`ID`)";
+			if(array_key_exists('LangFields',$array)){
+				foreach($array['LangFields'] as $key => $fieldAlias){
+					$this->_('select')[] = "`{$array['LangAlias']}`.`$key` `$fieldAlias`";
 				}
-				$this->_('join')[] = "`{$item['Table']}Lang` `{$item['LangAlias']}` ON(`{$item['LangAlias']}`.`{$item['Table']}ID` = `{$item['Alias']}`.`ID`)";
-				$this->_('where')["{$item['LangAlias']}.Lang"] = $this->_('lang');
+				$this->_('join')[] = "`{$array['Table']}Lang` `{$array['LangAlias']}` ON(`{$array['LangAlias']}`.`{$array['Table']}ID` = `$alias`.`ID`)";
+				$this->_('where')["{$array['LangAlias']}.Lang"] = $this->_('lang');
 			}
 		}
 		return $this;
@@ -38,8 +38,8 @@ class QueryBuilder {
 	public function aggregate($aggregate){
 		foreach($aggregate as $alias => $array){
 			$this->_('join')[] = "`{$array['JoiningTable']}` `{$alias}` ON(`{$alias}`.`{$array['JoinedTable']}ID` = `{$array['JoinedTableAlias']}`.`ID`)";
-			foreach($array['Fields'] as $field){
-				$this->_('select')[] = "{$field['Function']} `{$field['Alias']}`";
+			foreach($array['Fields'] as $fieldAlias => $function){
+				$this->_('select')[] = "$function `$fieldAlias`";
 			}
 		}
 		return $this;
@@ -136,7 +136,7 @@ class QueryBuilder {
 		return $this;
 	}
 	private function select($table,$fields = array()){
-		$this->_('select',array_merge($fields,$this->_('select'),array("`{$table}`.`ID` `ID`")));
+		$this->_('select',array_merge($fields,array("`{$table}`.`ID` `__ID__`"),$this->_('select')));
 		$this->_('select',"SELECT " . implode(', ',$this->_('select')));
 		return $this;
 	}
