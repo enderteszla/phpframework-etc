@@ -238,11 +238,11 @@ class Validation {
 		return settype($field,'int');
 	}
 	private function _text(&$field) {
-		$field = htmlentities($field,ENT_QUOTES,"UTF-8");
+		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
 		return !empty($field);
 	}
 	private function _textEmpty(&$field) {
-		$field = htmlentities($field,ENT_QUOTES,"UTF-8");
+		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
 		return true;
 	}
 	private function _bool(&$field) {
