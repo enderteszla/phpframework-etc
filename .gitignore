@@ -55,5 +55,6 @@
 
 /view/*
 !/view/.htaccess
+!/view/email.php
 !/view/root.php
 !/view/upgradeDB/
