@@ -17,15 +17,19 @@ class Email {
 		}
 		$headers = "From: {$this->from}\r\n";
 		$headers .= "X-Mailer: PHP/" . phpversion();
+		$json = input('json');
+		input('json',0);
 		mail(
 			$target,
 			$this->$template($data)->subject,
-			Output::_getInstance()
+			/* Output::_getInstance()
 				->setSource(array_merge(array('subject' => $this->subject,'message' => $this->message),$data))
 				->expose(VIEW_PATH . "email.php",true)
-				->__(),
+				->__(), */
+			$this->message,
 			$headers
 		);
+		input('json',$json);
 		return $this;
 	}
 
