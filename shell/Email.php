@@ -31,12 +31,12 @@ class Email {
 
 	private function activate($data = array()){
 		$this->subject = Lang::_getInstance()->getValue('activationSubject','User');
-		$this->message = Lang::_getInstance()->getValue('activationBody','User',$data['token']);
+		$this->message = Lang::_getInstance()->getValue('activationBody','User',array($data['token']));
 		return $this;
 	}
 	private function restorePassword($data = array()){
 		$this->subject = Lang::_getInstance()->getValue('passwordRestorationSubject','User');
-		$this->message = Lang::_getInstance()->getValue('passwordRestorationBody','User',$data['token']);
+		$this->message = Lang::_getInstance()->getValue('passwordRestorationBody','User',array($data['token']));
 		return $this;
 	}
 }
