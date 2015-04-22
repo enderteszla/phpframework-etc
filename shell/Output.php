@@ -52,7 +52,7 @@ class Output {
 		if($this->countErrors() > 0){
 			$data = array(
 				'status' => 'Fail',
-				'data' => $this->errors()
+				'data' => array('errors' => $this->errors())
 			);
 		} else {
 			$data = array(
