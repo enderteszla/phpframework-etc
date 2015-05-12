@@ -131,7 +131,7 @@ class Validation {
 	}
 	public function processWith($joinedTable,&$with){
 		$return = array();
-		foreach(is_array($with) ? $with : array($with) as $k => &$v){
+		foreach(is_array($with) ? $with : array($with) as $k => $v){
 			$item = is_numeric($k) ? $v : $k;
 			if(!array_key_exists($item,config('rules','Validation'))
 				|| !array_key_exists($item,config('flags','Validation'))){
@@ -241,9 +241,21 @@ class Validation {
 		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
 		return !empty($field);
 	}
+	private function _html(&$field){
+		DB::_getInstance()->escape($field);
+		return !empty($field);
+	}
 	private function _textEmpty(&$field) {
 		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
 		return true;
+	}
+	private function _htmlEmpty(&$field){
+		DB::_getInstance()->escape($field);
+		return true;
+	}
+	private function _date(&$field) {
+		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
+		return !empty($field);
 	}
 	private function _bool(&$field) {
 		return settype($field,'bool');

@@ -27,7 +27,10 @@ spl_autoload_register(function($class){
 	Loader::_getInstance()->load($class);
 });
 
-if(!array_key_exists('PATH_INFO',$_SERVER) || !preg_match_all(':([^/]+)/?:',$_SERVER['PATH_INFO'],$m)){
+if(
+	(!array_key_exists('ORIG_PATH_INFO',$_SERVER) || !preg_match_all(':([^/]+)/?:',$_SERVER['ORIG_PATH_INFO'],$m)) &&
+	(!array_key_exists('PATH_INFO',$_SERVER) || !preg_match_all(':([^/]+)/?:',$_SERVER['PATH_INFO'],$m))
+){
 	$controller = config('controller','Default');
 	$method = config('method','Default');
 	$args = array();

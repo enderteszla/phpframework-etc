@@ -147,6 +147,10 @@ trait Content {
 			default:
 				$result = array();
 				foreach(func_get_args() as $i => $id){
+					if($id == -1){
+						$result = array_merge($result,array("ID" . ($i + 1) => -1));
+						continue;
+					}
 					$t = $this->prepareSource()->parse(input('filter') . "/$i")->prepareFilter()->save($id)->__();
 					$result = array_merge($result,array_combine(array_map(postfix(($i) ? $i + 1 : ""),array_keys($t)),array_values($t)));
 				}
@@ -208,22 +212,22 @@ trait Content {
 			case empty($filter):
 			case count($filter) == 1 && !array_key_exists($filter[0],config('filters',$this->_('type'))):
 				$this->filter = config('filters',$this->_('type'))['Default'];
-				$this->path = config('contentPath','Default') . "default/";
+				$this->path = config('contentPath','Default') . lcfirst($this->_('type')) . "/default/";
 				return $this;
 			case count($filter) == 1:
 				$this->filter = config('filters',$this->_('type'))[$filter[0]];
-				$this->path = config('contentPath','Default') . lcfirst($filter[0]) . "/";
+				$this->path = config('contentPath','Default') . lcfirst($this->_('type')) . "/" . lcfirst($filter[0]) . "/";
 				return $this;
 			default:
 				$this->filter = config('filters',$this->_('type'));
-				$this->path = config('contentPath','Default');
+				$this->path = config('contentPath','Default') . lcfirst($this->_('type')) . "/";
 				foreach($filter as $i){
 					if(array_key_exists($i,$this->filter)){
 						$this->filter = $this->filter[$i];
 						$this->path .= lcfirst($i) . "/";
 					} else {
 						$this->filter = config('filters',$this->_('type'))['Default'];
-						$this->path = config('contentPath','Default') . "default/";
+						$this->path = config('contentPath','Default') . lcfirst($this->_('type')) . "/default/";
 					}
 				}
 				return $this;

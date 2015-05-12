@@ -144,4 +144,7 @@ class DB {
 		}
 		return $res;
 	}
+	public function escape($string){
+		return $this->link->real_escape_string($string);
+	}
 }

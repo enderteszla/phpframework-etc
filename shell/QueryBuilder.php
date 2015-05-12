@@ -142,12 +142,12 @@ class QueryBuilder {
 	}
 	private function from($table,$join = array()){
 		$this->_('join',array_merge($join,$this->_('join')));
-		$this->_('from',"FROM `{$table}`" . (empty($this->_('join')) ? "" : " LEFT OUTER JOIN " .  implode(' LEFT OUTER JOIN ',$this->_('join'))));
+		$this->_('from',"FROM `{$table}`" . (!$this->_('join') ? "" : " LEFT OUTER JOIN " .  implode(' LEFT OUTER JOIN ',$this->_('join'))));
 		return $this;
 	}
 	private function where($data = array()){
 		$this->_('where',array_merge($data,$this->_('where')));
-		$this->_('where',empty($this->_('where')) ? "" : "WHERE " . implode(' AND ',array_map(function($k,$v){
+		$this->_('where',!$this->_('where') ? "" : "WHERE " . implode(' AND ',array_map(function($k,$v){
 				$k = '`' . implode('`.`',explode('.',$k)) . '`';
 				switch(true){
 					case is_null($v):
