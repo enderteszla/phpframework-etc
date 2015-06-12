@@ -254,7 +254,9 @@ class Validation {
 		return true;
 	}
 	private function _date(&$field) {
-		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
+		if($field = date_create($field)){
+			$field = $field->format("Y-m-d");
+		}
 		return !empty($field);
 	}
 	private function _bool(&$field) {

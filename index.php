@@ -2,6 +2,7 @@
 	case 'cli':
 		define('BASE_PATH',__DIR__);
 		define('IS_CLI',true);
+		$_SERVER['PATH_INFO'] = '/' . implode('/',array_slice($argv,1));
 		break;
 	default:
 		define('BASE_PATH',$_SERVER['DOCUMENT_ROOT']);

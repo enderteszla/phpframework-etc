@@ -1,14 +1,14 @@
 /** jQuery own written library **/
 
 $.owl = {
-    id: function (str,prefix) {
-        return str.replace(RegExp('^.*' + (prefix ? prefix.replace(/(\\?)[\-]/, function ($0, $1) {
-            return $1 ? $0 : '\\' + $0;
-        }) : 'id') + '\\-(\\d+).*$'), '$1');
-    },
-    url: function (str) {
-        return str.replace(/^url\('?(.*)'?\)$/, "$1");
-    }
+	id: function (str,prefix) {
+		return str.replace(RegExp('^.*' + (prefix ? prefix.replace(/(\\?)[\-]/, function ($0, $1) {
+			return $1 ? $0 : '\\' + $0;
+		}) : 'id') + '\\-(\\d+).*$'), '$1');
+	},
+	url: function (str) {
+		return str.replace(/^url\('?(.*)'?\)$/, "$1");
+	}
 };
 /**
  * Почему? Зачем этот файл?
@@ -143,16 +143,34 @@ $.fn.popup = function(settings) {
 			return true;
 		}
 	},settings);
-	var overlayElement = $('<div id="overlay"></div>').appendTo('body');
-	var popupElement = $('<div id="popup"></div>').appendTo('body');
+
+	var overlayElement = $('#overlay'),
+		popupElement = $('#popup'),
+		clear = (function(){
+			if(overlayElement.length && popupElement.length){
+				return function(){
+					overlayElement.removeAttr('class').html('');
+					popupElement.removeAttr('class').html('');
+				};
+			} else {
+				overlayElement.remove();
+				overlayElement = $('<div id="overlay"></div>').appendTo('body');
+				popupElement.remove();
+				popupElement = $('<div id="popup"></div>').appendTo('body');
+				return function(){
+					overlayElement.remove();
+					popupElement.remove();
+				};
+			}
+		})();
+
 	var root = this;
 	return this.data('popup',{
 		open: function(url,data){
-            var popup = root.data('popup');
+			var popup = root.data('popup');
 			$.when(settings.beforeOpen(popupElement,overlayElement)).then(function(status){
 				if(!status){
-					overlayElement.remove();
-					popupElement.remove();
+					clear();
 					return popup;
 				}
 				if(!data){
@@ -162,15 +180,15 @@ $.fn.popup = function(settings) {
 					root.addClass('fixed');
 					$(document).keyup(function(e){
 						if(e.which == 27){
-                            popup.close();
+							popup.close();
 						}
 					});
 					overlayElement.click(function(e){
-                        popup.close();
+						popup.close();
 					});
-                    if(typeof settings.afterOpen == 'function'){
-                        settings.afterOpen(popupElement,overlayElement);
-                    }
+					if(typeof settings.afterOpen == 'function'){
+						settings.afterOpen(popupElement,overlayElement);
+					}
 				}).addClass(settings.popupClass);
 				return popup;
 			});
@@ -180,12 +198,11 @@ $.fn.popup = function(settings) {
 				if(!status){
 					return this;
 				}
-				popupElement.remove();
-				overlayElement.remove();
+				clear();
 				root.removeClass('fixed');
 				$(document).unbind('keyup');
-                var popup = root.data('popup');
-                root.removeData('popup');
+				var popup = root.data('popup');
+				root.removeData('popup');
 				if(typeof settings.afterClose == 'function'){
 					settings.afterClose(popup);
 				}

@@ -1,6 +1,6 @@
 RewriteEngine on
 
-RewriteCond $1 !^(404\.php|asset|content|index\.php|robots\.txt)
+RewriteCond $1 !^(404\.php|asset|content|favicon\.ico|index\.php|robots\.txt)
 RewriteRule ^(.*)$ /index.php/$1 [L]
 
 RewriteCond %{SCRIPT_FILENAME} !404.php
