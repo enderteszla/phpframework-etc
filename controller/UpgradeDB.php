@@ -1,8 +1,9 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class UpgradeDB {
-	use Controller;
-
+class UpgradeDB extends Controller {
+	/**
+	 * @return $this
+	 */
 	public function index(){
 		Config::_getInstance()->load('UpgradeDB');
 		if(!config('enabled','UpgradeDB')){
@@ -29,6 +30,10 @@ class UpgradeDB {
 		}
 		return $this->run();
 	}
+
+	/**
+	 * @return $this
+	 */
 	public function test(){
 		Config::_getInstance()->load('UpgradeDB');
 		if(!config('enabled','UpgradeDB')){
@@ -50,6 +55,11 @@ class UpgradeDB {
 		return $this;
 	}
 
+	/**
+	 * @param array $filter
+	 * @param string $path
+	 * @return bool
+	 */
 	private function skeleton($filter,$path = null){
 		if(is_null($path)){
 			$path = BASE_PATH . config('contentPath','Default');
@@ -66,6 +76,11 @@ class UpgradeDB {
 		}
 		return $result;
 	}
+
+	/**
+	 * @param string $type
+	 * @return $this
+	 */
 	private function run($type = 'core'){
 		$db = DB::_getInstance();
 		switch($type){

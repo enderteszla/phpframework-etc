@@ -1,25 +1,45 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class Validation {
-	use Shell;
-
+class Validation extends Shell {
+	/**
+	 * @var bool
+	 */
 	private $lang = null;
+	/**
+	 * @var array
+	 */
 	private $mode = null;
+	/**
+	 * @var array
+	 */
 	private $rules = null;
 
-	private function __init(){
+	protected function __init(){
 		$this->mode = array();
 		Config::_getInstance()->load('Validation');
 	}
 
+	/**
+	 * @return $this
+	 */
 	public function clean(){
 		$this->rules = array();
 		return $this;
 	}
+
+	/**
+	 * @param bool $lang
+	 * @return $this
+	 */
 	public function setLang($lang = null){
 		$this->lang = $lang;
 		return $this;
 	}
+
+	/**
+	 * @param string|array $mode
+	 * @return $this
+	 */
 	public function setMode($mode = null){
 		switch(true){
 			case is_null($mode):
@@ -33,6 +53,12 @@ class Validation {
 		}
 		return $this;
 	}
+
+	/**
+	 * @param string $table
+	 * @param array $data
+	 * @return $this
+	 */
 	public function process($table,&$data){
 		switch(true){
 			case $this->lang === true: // Locale-sensitive data available; use both.
@@ -96,6 +122,12 @@ class Validation {
 		}
 		return $this;
 	}
+
+	/**
+	 * @param mixed $ids
+	 * @param bool $null
+	 * @return $this
+	 */
 	public function processID(&$ids,$null = false){
 		$filter = $null ? '_idNull' : '_id';
 		if(is_array($ids)){
@@ -114,12 +146,23 @@ class Validation {
 		}
 		return $this->result($ids = $returnArray ? $ids : $ids[0]);
 	}
+
+	/**
+	 * @param string $lang
+	 * @return $this
+	 */
 	public function processLocale($lang){
 		if(!in_array($lang,config('locales','Default'))){
 			$this->addError('validation',6);
 		}
 		return $this;
 	}
+
+	/**
+	 * @param string $table
+	 * @param array $flags
+	 * @return $this
+	 */
 	public function processFlags($table,&$flags){
 		foreach($flags as $k => &$v){
 			if(!in_array($k,config('flags','Validation')[$table])
@@ -129,6 +172,12 @@ class Validation {
 		}
 		return $this;
 	}
+
+	/**
+	 * @param string $joinedTable
+	 * @param string|array $with
+	 * @return $this
+	 */
 	public function processWith($joinedTable,&$with){
 		$return = array();
 		foreach(is_array($with) ? $with : array($with) as $k => $v){
@@ -137,7 +186,7 @@ class Validation {
 				|| !array_key_exists($item,config('flags','Validation'))){
 				continue;
 			}
-			foreach(preg_grep("/^{$item}ID\d*$/",array_keys(config('rules','Validation')[end(explode('<',$joinedTable))])) as $key) {
+			foreach($this->getReferences($item,end(explode('<',$joinedTable))) as $key) {
 				$d = str_replace("{$item}ID",'',$key);
 				$fields = array();
 				foreach (array_merge(array_fill_keys(config('flags','Validation')[$item],'_bool'),
@@ -170,6 +219,12 @@ class Validation {
 		$with = $return;
 		return $this;
 	}
+
+	/**
+	 * @param string $joinedTable
+	 * @param string|array $aggregate
+	 * @return $this
+	 */
 	public function processAggregate($joinedTable,&$aggregate){
 		$return = array();
 		$aggregate = is_array($aggregate) ? $aggregate : array($aggregate);
@@ -222,10 +277,28 @@ class Validation {
 		return $this;
 	}
 
+	/**
+	 * @param string $referenceType
+	 * @param string $originType
+	 * @return array
+	 */
+	public function getReferences($referenceType,$originType){
+		return preg_grep("/^{$referenceType}ID\d*$/",array_keys(config('rules','Validation')[$originType]));
+	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _id(&$field) {
 		$field = (preg_match("/^\d+$/","$field",$m)) ? $m[0] : 0;
 		return settype($field,'int') && $field > 0;
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _idNull(&$field){
 		if(empty($field)){
 			$field = null;
@@ -233,32 +306,67 @@ class Validation {
 		}
 		return $this->_id($field);
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _int(&$field) {
 		$field = (preg_match("/^\d+$/","$field",$m)) ? $m[0] : 0;
 		return settype($field,'int');
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _text(&$field) {
 		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
 		return !empty($field);
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _html(&$field){
 		DB::_getInstance()->escape($field);
 		return !empty($field);
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _textEmpty(&$field) {
 		$field = htmlentities($field,ENT_QUOTES,"UTF-8",false);
 		return true;
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _htmlEmpty(&$field){
 		DB::_getInstance()->escape($field);
 		return true;
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _date(&$field) {
 		if($field = date_create($field)){
 			$field = $field->format("Y-m-d");
 		}
 		return !empty($field);
 	}
+
+	/**
+	 * @param mixed $field
+	 * @return bool
+	 */
 	private function _bool(&$field) {
 		return settype($field,'bool');
 	}

@@ -1,5 +1,10 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
+/**
+ * @param string $source
+ * @param string $target
+ * @return bool
+ */
 function copyContent($source,$target){
 	if(!is_writable($target)){
 		Error::_getInstance()->add('filesystem',0,array($target));
@@ -24,6 +29,10 @@ function copyContent($source,$target){
 	return true;
 }
 
+/**
+ * @param string $target
+ * @return bool
+ */
 function removeContent($target){
 	if(!is_writable($target)){
 		Error::_getInstance()->add('filesystem',0,array($target));

@@ -28,27 +28,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-class PasswordHash {
-	use Shell;
-
+class PasswordHash extends Shell {
+	/**
+	 * @var string
+	 */
 	private $PBKDF2_HASH_ALGORITHM = null;
+	/**
+	 * @var int
+	 */
 	private $PBKDF2_ITERATIONS = null;
+	/**
+	 * @var int
+	 */
 	private $PBKDF2_SALT_BYTE_SIZE = null;
+	/**
+	 * @var int
+	 */
 	private $PBKDF2_HASH_BYTE_SIZE = null;
-
+	/**
+	 * @var int
+	 */
 	private $HASH_SECTIONS = null;
+	/**
+	 * @var int
+	 */
 	private $HASH_ALGORITHM_INDEX = null;
+	/**
+	 * @var int
+	 */
 	private $HASH_ITERATION_INDEX = null;
+	/**
+	 * @var int
+	 */
 	private $HASH_SALT_INDEX = null;
+	/**
+	 * @var int
+	 */
 	private $HASH_PBKDF2_INDEX = null;
 
-	private function __init(){
+	protected function __init(){
 		Config::_getInstance()->load('PasswordHash');
 		foreach(config('PasswordHash') as $key => $value){
 			$this->$key = $value;
 		}
 	}
 
+	/**
+	 * @param string $password
+	 * @return string
+	 */
 	public function create_hash($password){
 		// format: algorithm:iterations:salt:hash
 		$salt = base64_encode(mcrypt_create_iv($this->PBKDF2_SALT_BYTE_SIZE, MCRYPT_DEV_URANDOM));
@@ -62,6 +90,12 @@ class PasswordHash {
 			true
 		));
 	}
+
+	/**
+	 * @param string $password
+	 * @param string $correct_hash
+	 * @return bool
+	 */
 	public function validate_password($password, $correct_hash){
 		$params = explode(":", $correct_hash);
 		if(count($params) < $this->HASH_SECTIONS)
@@ -80,7 +114,12 @@ class PasswordHash {
 		);
 	}
 
-	// Compares two strings $a and $b in length-constant time.
+	/**
+	 * Compares two strings $a and $b in length-constant time.
+	 * @param $a
+	 * @param $b
+	 * @return bool
+	 */
 	private function slow_equals($a, $b){
 		$diff = strlen($a) ^ strlen($b);
 		for($i = 0; $i < strlen($a) && $i < strlen($b); $i++)
@@ -89,7 +128,8 @@ class PasswordHash {
 		}
 		return $diff === 0;
 	}
-	/*
+
+	/**
 	 * PBKDF2 key derivation function as defined by RSA's PKCS #5: https://www.ietf.org/rfc/rfc2898.txt
 	 * $algorithm - The hash algorithm to use. Recommended: SHA256
 	 * $password - The password.
@@ -103,6 +143,13 @@ class PasswordHash {
 	 *
 	 * This implementation of PBKDF2 was originally created by https://defuse.ca
 	 * With improvements by http://www.variations-of-shadow.com
+	 * @param string $algorithm
+	 * @param string $password
+	 * @param string $salt
+	 * @param int $count
+	 * @param int $key_length
+	 * @param bool $raw_output
+	 * @return mixed|string
 	 */
 	private function pbkdf2($algorithm, $password, $salt, $count, $key_length, $raw_output = false){
 		$algorithm = strtolower($algorithm);

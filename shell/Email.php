@@ -1,16 +1,29 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class Email {
-	use Shell;
-
+class Email extends Shell {
+	/**
+	 * @var string
+	 */
 	private $from = null;
+	/**
+	 * @var string
+	 */
 	private $subject = null;
+	/**
+	 * @var string
+	 */
 	private $message = null;
 
-	private function __init(){
+	protected function __init(){
 		$this->from = "no-reply@rha.enderteszla.su";
 	}
 
+	/**
+	 * @param string $target
+	 * @param string $template
+	 * @param array $data
+	 * @return $this
+	 */
 	public function send($target,$template,$data){
 		if(!method_exists($this,$template)){
 			return $this->addError('email',0);
@@ -33,11 +46,20 @@ class Email {
 		return $this;
 	}
 
+	/**
+	 * @param array $data
+	 * @return $this
+	 */
 	private function activate($data = array()){
 		$this->subject = Lang::_getInstance()->getValue('activationSubject','User');
 		$this->message = Lang::_getInstance()->getValue('activationBody','User',array($data['token']));
 		return $this;
 	}
+
+	/**
+	 * @param array $data
+	 * @return $this
+	 */
 	private function restorePassword($data = array()){
 		$this->subject = Lang::_getInstance()->getValue('passwordRestorationSubject','User');
 		$this->message = Lang::_getInstance()->getValue('passwordRestorationBody','User',array($data['token']));

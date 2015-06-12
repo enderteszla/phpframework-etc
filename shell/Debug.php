@@ -1,14 +1,18 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class Debug {
-	use Shell;
-
+class Debug extends Singleton {
+	/**
+	 * @var bool
+	 */
 	private $traceFlag = null;
 
-	private function __init(){
+	protected function __init(){
 		Config::_getInstance()->load('Debug');
 	}
 
+	/**
+	 * @return $this
+	 */
 	public function start(){
 		$this->traceFlag = true;
 		if(config('echo','Debug')){
@@ -16,6 +20,10 @@ class Debug {
 		}
 		return $this;
 	}
+
+	/**
+	 * @return $this
+	 */
 	public function stop(){
 		$this->traceFlag = false;
 		if(config('echo','Debug')){
@@ -23,9 +31,17 @@ class Debug {
 		}
 		return $this;
 	}
+
+	/**
+	 * @return bool
+	 */
 	public function status(){
 		return $this->traceFlag;
 	}
+
+	/**
+	 * @return bool|string
+	 */
 	public function get(){
 		if(!$this->traceFlag){
 			return false;

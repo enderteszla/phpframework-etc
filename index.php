@@ -16,6 +16,8 @@ define('HELPER_PATH',BASE_PATH . '/helper/');
 define('LANG_PATH',BASE_PATH . '/lang/');
 define('VIEW_PATH',BASE_PATH . '/view/');
 
+function error404(){ include_once BASE_PATH . '/404.php'; return $this; }
+
 require_once SHELL_PATH . 'Common.php';
 require_once SHELL_PATH . 'Config.php';
 require_once SHELL_PATH . 'Input.php';
@@ -56,7 +58,7 @@ if(is_null($data['Token']) && is_null($data['Token'] = Token::_getInstance()->_g
 
 $controllerInstance = $controller::_getInstance();
 if(!is_callable(array($controllerInstance,$method))){
-	include_once BASE_PATH . '/404.php';
+	error404();
 }
 call_user_func_array(array($controllerInstance,$method),$args);
 $result = $controllerInstance->__();

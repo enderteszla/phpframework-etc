@@ -1,11 +1,16 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class User {
-	use Controller;
-
+class User extends Controller {
+	/**
+	 * @return $this
+	 */
 	public function index(){
 		return $this->result(array());
 	}
+
+	/**
+	 * @return $this
+	 */
 	public function register(){
 		if(!input('json')){
 			return $this->result(array());
@@ -43,6 +48,10 @@ class User {
 			return $this->_set($this->_result['ID']);
 		}
 	}
+
+	/**
+	 * @return $this
+	 */
 	public function login(){
 		if(!input('json')){
 			return $this->result(array());
@@ -66,9 +75,13 @@ class User {
 		setcookie('token',$this->_('token')['Content'],null,'/');
 		return $this->result(array('Token' => $this->_('token')['Content']));
 	}
+
+	/**
+	 * @return $this
+	 */
 	public function logout(){
 		if(!input('json')){
-			include BASE_PATH . '/404.php';
+			return error404();
 		}
 		Token::_getInstance()->__($this->_('token',false));
 		if(is_null($this->_('token')) || is_null($this->_('token')['UserID']) || ($this->_('token')['Type'] != 'session')) {
@@ -77,6 +90,11 @@ class User {
 		Token::_getInstance()->_drop();
 		return $this;
 	}
+
+	/**
+	 * @param string $content
+	 * @return $this
+	 */
 	public function activate($content){
 		Token::_getInstance()->_get(array(
 			'Content' => $content,
@@ -90,6 +108,11 @@ class User {
 		}
 		return $this->_get($this->_('token')['UserID']);
 	}
+
+	/**
+	 * @param string $content
+	 * @return $this
+	 */
 	public function restorePassword($content = null){
 		$t = Token::_getInstance();
 		if(!is_null($content)){

@@ -31,13 +31,17 @@
 255	MYSQLI_TYPE_GEOMETRY	GEOMETRY            ???
  */
 
-class Result {
-	use Singleton;
-
+class Result extends Singleton {
+	/**
+	 * @var array
+	 */
 	private $types = null;
+	/**
+	 * @var array
+	 */
 	private $rules = null;
 
-	private function __init(){
+	protected function __init(){
 		$this->types = array();
 		foreach(get_defined_constants(true)['mysqli'] as $c => $n){
 			if (preg_match('/^MYSQLI_TYPE_(.*)$/', $c, $m)) $this->types[$n] = $m[0];
@@ -74,6 +78,11 @@ class Result {
 		);
 	}
 
+	/**
+	 * @param mysqli_result $mysqli_result
+	 * @param bool $single
+	 * @return array|bool|null
+	 */
 	public function fetch($mysqli_result,$single){
 		$this->_('fields',array());
 		foreach($mysqli_result->fetch_fields() as $field){
@@ -101,6 +110,10 @@ class Result {
 		return $result;
 	}
 
+	/**
+	 * @param array $row
+	 * @return mixed
+	 */
 	private function cast(&$row){
 		foreach($row as $k => &$v){
 			if(!is_null($v)){

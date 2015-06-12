@@ -1,8 +1,13 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class QueryBuilder {
-	use Singleton;
+class QueryBuilder extends Singleton {
+	protected function __init(){
+		$this->clean();
+	}
 
+	/**
+	 * @return $this
+	 */
 	public function clean(){
 		$this->_('lang',false);
 
@@ -18,6 +23,10 @@ class QueryBuilder {
 		return $this;
 	}
 
+	/**
+	 * @param array $with
+	 * @return $this
+	 */
 	public function with($with){
 		foreach ($with as $alias => $array) {
 			foreach($array['Fields'] as $key => $fieldAlias){
@@ -35,6 +44,10 @@ class QueryBuilder {
 		return $this;
 	}
 
+	/**
+	 * @param array $aggregate
+	 * @return $this
+	 */
 	public function aggregate($aggregate){
 		foreach($aggregate as $alias => $array){
 			$this->_('join')[] = "`{$array['JoiningTable']}` `{$alias}` ON(`{$alias}`.`{$array['JoinedTable']}ID` = `{$array['JoinedTableAlias']}`.`ID`)";
@@ -45,11 +58,12 @@ class QueryBuilder {
 		return $this;
 	}
 
-	public function build($queryType,$table,$data){
-		return call_user_func(array($this,$queryType),$table,$data);
-	}
-
-	private function upsert($table,$data){
+	/**
+	 * @param string $table
+	 * @param array $data
+	 * @return string
+	 */
+	public function upsert($table,$data){
 		$this->insertInto($table,array_keys($data));
 		$this->values($data);
 		if($this->_('lang')){
@@ -64,7 +78,13 @@ class QueryBuilder {
 		{$this->_('values')}
 		ON DUPLICATE KEY UPDATE {$this->_('set')};";
 	}
-	private function set($table,$data){
+
+	/**
+	 * @param string $table
+	 * @param array $data
+	 * @return string
+	 */
+	public function set($table,$data){
 		$this->update($table,$data['flags']);
 		$this->where(array('ID' => $data['ids']));
 		return "
@@ -73,7 +93,13 @@ class QueryBuilder {
 		{$this->_('where')}
 		;";
 	}
-	private function get($table,$data){
+
+	/**
+	 * @param string $table
+	 * @param array $data
+	 * @return string
+	 */
+	public function get($table,$data){
 		$this->select($table,$this->_('lang') ? array("`{$table}`.*","`{$table}Lang`.*") : array("`{$table}`.*"));
 		$this->from($table,$this->_('lang') ? array("`{$table}Lang` ON(`{$table}Lang`.`{$table}ID` = `{$table}`.`ID`)") : array());
 		$this->where(empty($data) ? array() : $data);
@@ -85,7 +111,13 @@ class QueryBuilder {
 		{$this->_('groupBy')}
 		;";
 	}
-	private function drop($table,$data){
+
+	/**
+	 * @param string $table
+	 * @param array $data
+	 * @return string
+	 */
+	public function drop($table,$data){
 		$this->from($table);
 		$this->where($data);
 		return "
@@ -94,11 +126,21 @@ class QueryBuilder {
 		;";
 	}
 
+	/**
+	 * @param string $table
+	 * @param array $keys
+	 * @return $this
+	 */
 	private function insertInto($table,$keys = array()){
 		$this->_('insertInto',array_merge($keys,$this->_('insertInto')));
 		$this->_('insertInto',"INSERT INTO `$table`(`" . implode('`,`',$this->_('insertInto')) . "`)");
 		return $this;
 	}
+
+	/**
+	 * @param array $values
+	 * @return $this
+	 */
 	private function values($values = array()){
 		$this->_('values',array_merge($values,$this->_('values')));
 		$this->_('values',"VALUES(" . implode(',',
@@ -116,6 +158,12 @@ class QueryBuilder {
 			},array_values($this->_('values')))) . ")");
 		return $this;
 	}
+
+	/**
+	 * @param string $table
+	 * @param array $data
+	 * @return $this
+	 */
 	private function update($table,$data = array()){
 		$this->_('update',"UPDATE `{$table}`");
 		$this->_('set',array_merge($data,$this->_('set')));
@@ -135,16 +183,33 @@ class QueryBuilder {
 			},array_keys($this->_('set')),array_values($this->_('set')))));
 		return $this;
 	}
+
+	/**
+	 * @param string $table
+	 * @param array $fields
+	 * @return $this
+	 */
 	private function select($table,$fields = array()){
 		$this->_('select',array_merge($fields,array("`{$table}`.`ID` `__ID__`"),$this->_('select')));
 		$this->_('select',"SELECT " . implode(', ',$this->_('select')));
 		return $this;
 	}
+
+	/**
+	 * @param string $table
+	 * @param array $join
+	 * @return $this
+	 */
 	private function from($table,$join = array()){
 		$this->_('join',array_merge($join,$this->_('join')));
 		$this->_('from',"FROM `{$table}`" . (!$this->_('join') ? "" : " LEFT OUTER JOIN " .  implode(' LEFT OUTER JOIN ',$this->_('join'))));
 		return $this;
 	}
+
+	/**
+	 * @param array $data
+	 * @return $this
+	 */
 	private function where($data = array()){
 		$this->_('where',array_merge($data,$this->_('where')));
 		$this->_('where',!$this->_('where') ? "" : "WHERE " . implode(' AND ',array_map(function($k,$v){
@@ -179,6 +244,11 @@ class QueryBuilder {
 			},array_keys($this->_('where')),array_values($this->_('where')))));
 		return $this;
 	}
+
+	/**
+	 * @param string $table
+	 * @return $this
+	 */
 	private function groupBy($table){
 		$this->_('groupBy',"GROUP BY `{$table}`.`ID`");
 		return $this;

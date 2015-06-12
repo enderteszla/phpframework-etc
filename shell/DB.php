@@ -1,11 +1,12 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class DB {
-	use Shell;
-
+class DB extends Shell {
+	/**
+	 * @var mysqli
+	 */
 	private $link = null;
 
-	private function __init(){
+	protected function __init(){
 		Config::_getInstance()->load('DB');
 		$this->link = new mysqli(config('host','DB'),config('user','DB'),config('password','DB'),config('db','DB'));
 		if($this->link->connect_error){
@@ -14,6 +15,13 @@ class DB {
 		$this->link->set_charset(config('encoding','DB'));
 	}
 
+	/**
+	 * @param string $table
+	 * @param bool|string $lang
+	 * @param array $data
+	 * @param int $id
+	 * @return $this
+	 */
 	public function upsert($table,$lang = false,$data = null,$id = null){
 		$v = Validation::_getInstance()->clean()->setLang()->setMode('required')->processID($id,true);
 		if(!is_null($data)) {
@@ -29,7 +37,7 @@ class DB {
 		}
 		$data['ID'] = $id;
 		$QB = QueryBuilder::_getInstance();
-		if(!($res = $this->link->query($QB->clean()->build('upsert',$table,$data)))){
+		if(!($res = $this->link->query($QB->clean()->upsert($table,$data)))){
 			return $this->addError('insert/update',$this->link->errno,$this->link->error);
 		}
 		$id = is_null($id) ? $this->link->insert_id : $id;
@@ -37,12 +45,20 @@ class DB {
 			$dataLang["{$table}ID"] = $id;
 			$dataLang['Lang'] = $lang;
 			$QB->_('lang',true);
-			if(!($res = $this->link->query($QB->clean()->build('upsert',"{$table}Lang",$dataLang)))){
+			if(!($res = $this->link->query($QB->clean()->upsert("{$table}Lang",$dataLang)))){
 				return $this->addError('insert/update',$this->link->errno,$this->link->error);
 			}
 		}
 		return $this->get($table,$lang,$id);
 	}
+
+	/**
+	 * @param string $table
+	 * @param int|array $ids
+	 * @param string|array $flags
+	 * @param bool $value
+	 * @return $this
+	 */
 	public function set($table,$ids,$flags = 'Active',$value = true){
 		if(!is_array($ids)){
 			$ids = array($ids);
@@ -54,11 +70,21 @@ class DB {
 			return $this;
 		}
 		$QB = QueryBuilder::_getInstance()->clean();
-		if(!($res = $this->link->query($QB->build('set',$table,array('flags' => $flags,'ids' => $ids))))){
+		if(!($res = $this->link->query($QB->set($table,array('flags' => $flags,'ids' => $ids))))){
 			return $this->addError('set',$this->link->errno,$this->link->error);
 		}
 		return $this;
 	}
+
+	/**
+	 * @param string $table
+	 * @param bool|string $lang
+	 * @param string|array $filter
+	 * @param string $key
+	 * @param string|array $with
+	 * @param string|array $aggregate
+	 * @return $this
+	 */
 	public function get($table,$lang = false,$filter = null,$key = null,$with = null,$aggregate = null){
 		$this->result(null);
 		$v = Validation::_getInstance()->clean()->setLang($lang ? true : null)->setMode('flags');
@@ -92,7 +118,7 @@ class DB {
 			return $this;
 		}
 		$result = Result::_getInstance()->fetch(
-			$this->link->query($QB->build('get',$table,$filter)),
+			$this->link->query($QB->get($table,$filter)),
 			is_array($filter) && array_key_exists("{$table}.ID",$filter) && !is_array($filter["{$table}.ID"])
 		);
 		switch(true){
@@ -106,6 +132,13 @@ class DB {
 				return $this->result($result);
 		}
 	}
+
+	/**
+	 * @param string $table
+	 * @param int|array $ids
+	 * @param bool|string $lang
+	 * @return $this
+	 */
 	public function drop($table,$ids,$lang = false){
 		if(!is_array($ids)){
 			$ids = array($ids);
@@ -115,14 +148,18 @@ class DB {
 			return $this;
 		}
 		$QB = QueryBuilder::_getInstance();
-		if($lang && !($res = $this->link->query($QB->clean()->build('drop', "{$table}Lang", array("{$table}ID" => $ids))))){
+		if($lang && !($res = $this->link->query($QB->clean()->drop("{$table}Lang", array("{$table}ID" => $ids,"Lang" => $lang))))){
 			return $this->addError('drop', $this->link->errno, $this->link->error);
 		}
-		if(!($res = $this->link->query($qb = $QB->clean()->build('drop',$table,array("ID"  => $ids))))){
+		if(!($res = $this->link->query($qb = $QB->clean()->drop($table,array("ID"  => $ids))))){
 			return $this->addError('drop',$this->link->errno,$this->link->error);
 		}
 		return $this;
 	}
+
+	/**
+	 * @return $this
+	 */
 	public function makeIndexedArray(){
 		if(!is_assoc($this->_result) || empty($this->_result)){
 			return $this->result(null);
@@ -133,17 +170,27 @@ class DB {
 		}
 		return $this->result($return);
 	}
+
+	/**
+	 * @param $query
+	 * @return bool|mysqli_result
+	 */
 	public function query($query){
 		if($res = $this->link->multi_query($query)) {
 			do {
-				if ($result = mysqli_store_result($this->link)) {
-					mysqli_free_result($result);
+				if ($res = mysqli_store_result($this->link)) {
+					mysqli_free_result($res);
 				}
 				if (mysqli_more_results($this->link));
 			} while (mysqli_next_result($this->link));
 		}
 		return $res;
 	}
+
+	/**
+	 * @param string $string
+	 * @return string
+	 */
 	public function escape($string){
 		return $this->link->real_escape_string($string);
 	}

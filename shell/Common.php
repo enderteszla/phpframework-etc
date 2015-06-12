@@ -1,20 +1,37 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-trait Singleton {
-	private static $instance = null;
+abstract class Singleton {
+	/**
+	 * @var array
+	 */
+	private static $instances;
+	/**
+	 * @var array
+	 */
 	private $vars = null;
 
-	private function __construct() { if(method_exists($this,'__init')) $this->__init(); /* ... @return Singleton */ }  // Защищаем от создания через new Singleton
+	abstract protected function __init();
+
+	private function __construct() { $this->__init(); /* ... @return Singleton */ }  // Защищаем от создания через new Singleton
 	private function __clone() { /* ... @return Singleton */ }  // Защищаем от создания через клонирование
 	private function __wakeup() { /* ... @return Singleton */ }  // Защищаем от создания через unserialize
 
+	/**
+	 * @return $this
+	 */
 	public static function &_getInstance(){
-		if(empty(self::$instance)){
-			self::$instance = new self();
+		$class = get_called_class();
+		if(!isset(self::$instances[$class])){
+			self::$instances[$class] = new $class();
 		}
-		return self::$instance;
+		return self::$instances[$class];
 	}
 
+	/**
+	 * @param string $var
+	 * @param mixed $val
+	 * @return mixed
+	 */
 	public function &_($var,$val = null){
 		if(!is_null($val)) {
 			$this->vars[ $var ] = $val;
@@ -23,30 +40,58 @@ trait Singleton {
 	}
 }
 
-trait Shell {
-	use Singleton;
-
+abstract class Shell extends Singleton {
+	/**
+	 * @var array
+	 */
 	protected $_result = null;
 
-	private function errors(){
+	/**
+	 * @return array
+	 */
+	protected function errors(){
 		return Error::_getInstance()->get();
 	}
-	private function countErrors(){
+
+	/**
+	 * @return int
+	 */
+	protected function countErrors(){
 		return Error::_getInstance()->count();
 	}
-	private function addError($key,$code,$details = array()){
+
+	/**
+	 * @param string $key
+	 * @param string $code
+	 * @param array $details
+	 * @return $this
+	 */
+	protected function addError($key,$code,$details = array()){
 		Error::_getInstance()->add($key,$code,$details);
 		return $this;
 	}
-	private function flushErrors(){
+
+	/**
+	 * @return $this
+	 */
+	protected function flushErrors(){
 		Error::_getInstance()->flush();
 		return $this;
 	}
 
-	private function result($result){
+	/**
+	 * @param array $result
+	 * @return $this
+	 */
+	protected function result($result){
 		$this->_result = $result;
 		return $this;
 	}
+
+	/**
+	 * @param mixed $to
+	 * @return $this|array
+	 */
 	public function __(&$to = null){
 		if(is_null($to)){
 			return $this->_result;
@@ -56,24 +101,57 @@ trait Shell {
 	}
 }
 
-trait Controller {
-	use Shell;
-
-	private function __init(){
+abstract class Controller extends Shell {
+	protected function __init(){
 		Lang::_getInstance()->load($this->_('type',get_class($this)));
 		return $this;
 	}
 
-	public function _upsert($data = null, $id = null){
-		return $this->result(DB::_getInstance()->upsert($this->_('type'), $this->_('lang'), $data, $id)->__());
+	/**
+	 * @return null|string
+	 */
+	private function _lang(){
+		if(array_key_exists($this->_('type') . "Lang", config('rules','Validation'))){
+			return input('lang');
+		}
+		return null;
 	}
+
+	/**
+	 * @param array $data
+	 * @param int $id
+	 * @return $this
+	 */
+	public function _upsert($data = null, $id = null){
+		return $this->result(DB::_getInstance()->upsert($this->_('type'), $this->_lang(), $data, $id)->__());
+	}
+
+	/**
+	 * @param int|array $ids
+	 * @param bool $value
+	 * @param string|array $field
+	 * @return $this
+	 */
 	public function _set($ids,$value = true,$field = 'Active'){
 		DB::_getInstance()->set($this->_('type'), $ids, $field, $value);
 		return $this;
 	}
+
+	/**
+	 * @param string|array $filter
+	 * @param string $key
+	 * @param string|array $with
+	 * @param string|array $aggregate
+	 * @return $this
+	 */
 	public function _get($filter = null,$key = null,$with = null, $aggregate = null){
-		return $this->result(DB::_getInstance()->get($this->_('type'), $this->_('lang'), $filter, $key, $with, $aggregate)->__());
+		return $this->result(DB::_getInstance()->get($this->_('type'), $this->_lang(), $filter, $key, $with, $aggregate)->__());
 	}
+
+	/**
+	 * @param int $n
+	 * @return $this
+	 */
 	public function _eq($n = 0){
 		switch(true){
 			case is_null($this->_result):
@@ -87,18 +165,62 @@ trait Controller {
 		}
 		return $this->result($this->_result[$n]);
 	}
-	public function _drop(){
-		if(empty($this->_result)){
+
+	/**
+	 * @param string|array $with
+	 * @param string $direction
+	 * @return $this
+	 */
+	public function _drop($with = array(),$direction = null){
+		if (empty($this->_result)) {
 			return $this;
 		}
-		if(is_assoc($this->_result)){
-			$ids = array($this->_result['ID']);
-		} else {
-			$ids = array_map(function($i){return $i['ID'];},$this->_result);
+		if(!is_array($with)){
+			$with = array($with);
 		}
-		DB::_getInstance()->drop($this->_('type'), $ids,$this->_('lang'));
+		if(!is_assoc($with)){
+			if(is_null($direction)){
+				$direction = "down";
+			}
+			$with = array($direction => $with);
+		}
+		$ids = $this->_field('ID');
+		if(array_key_exists('down',$with)){
+			foreach($with['down'] as $k => $v){
+				if(is_numeric($k)){
+					$objectType = $v;
+					$dependencies = array();
+				} else {
+					$objectType = $k;
+					$dependencies = $v;
+				}
+				$object = _getInstance($objectType);
+				foreach(Validation::_getInstance()->getReferences($this->_('type'),$objectType) as $key){
+					$object->_get($ids,$key)->_drop($dependencies);
+				}
+			}
+		}
+		DB::_getInstance()->drop($this->_('type'), $this->_field('ID'), $this->_lang());
+		if(array_key_exists('up',$with)){
+			foreach($with['up'] as $k => $v){
+				if(is_numeric($k)){
+					$objectType = $v;
+					$dependencies = array();
+				} else {
+					$objectType = $k;
+					$dependencies = $v;
+				}
+				_getInstance($objectType)->_get($this->_getReferences($objectType))->_drop($dependencies);
+			}
+		}
 		return $this;
 	}
+
+	/**
+	 * @param string $key
+	 * @param string $value
+	 * @return array|null
+	 */
 	public function _find($key,$value){
 		foreach ($this->_result as $element) {
 			if($element[$key] == $value){
@@ -107,41 +229,77 @@ trait Controller {
 		}
 		return null;
 	}
-	public function _dropImages(){
+
+	/**
+	 * @param string $key
+	 * @return array
+	 */
+	public function _field($key){
+		if (is_assoc($this->_result)) {
+			return array($this->_result[$key]);
+		} else {
+			return array_map(function ($i) use($key) {
+				return $i[$key];
+			}, $this->_result);
+		}
+	}
+
+	/**
+	 * @param string $referenceType
+	 * @return array
+	 */
+	public function _getReferences($referenceType){
 		if(empty($this->_result)){
-			return $this;
+			return array();
 		}
 		if(is_assoc($this->_result)){
 			$ids = array_values(array_intersect_key(
 				$this->_result,
-				array_fill_keys(preg_grep('/^ImageID\d*$/',array_keys($this->_result)),true)
+				array_fill_keys(preg_grep("/^{$referenceType}ID\d*\$/",array_keys($this->_result)),true)
 			));
 		} else {
 			$ids = array();
 			foreach($this->_result as $element){
 				$ids = array_unique(array_merge($ids, array_values(array_intersect_key(
 					$element,
-					array_fill_keys(preg_grep('/^ImageID\d*$/',array_keys($element)),true)
+					array_fill_keys(preg_grep("/^{$referenceType}ID\d*\$/",array_keys($element)),true)
 				))));
 			}
 		}
-		Image::_getInstance()->remove($ids);
-		return $this;
+		return $ids;
 	}
 }
 
-trait Content {
-	use Controller;
+abstract class Content extends Controller {
+	/**
+	 * @var array
+	 */
+	protected $source = null;
+	/**
+	 * @var array
+	 */
+	protected $filter = null;
+	/**
+	 * @var string
+	 */
+	protected $path = null;
 
-	private $source = null;
-	private $filter = null;
-	private $path = null;
+	abstract protected function processSource();
 
+	abstract protected function prepareFilter();
+
+	abstract protected function save();
+
+	abstract protected function finalize();
+
+	/**
+	 * @return $this
+	 */
 	public function create(){
 		Config::_getInstance()->load($this->_('type'));
 		switch(func_num_args()){
 			case 0:
-				include_once BASE_PATH . '/404.php';
+				return error404();
 			case 1:
 				return $this->prepareSource()->parse(input('filter'))->prepareFilter()->save(func_get_arg(0))->finalize();
 			default:
@@ -157,6 +315,11 @@ trait Content {
 				return $this->result($result)->finalize();
 		}
 	}
+
+	/**
+	 * @param mixed $ids
+	 * @return $this
+	 */
 	public function remove($ids){
 		switch(true){
 			case is_array($ids):
@@ -167,7 +330,11 @@ trait Content {
 			default:
 				$ids = array($ids);
 		}
-		if($this->_get($ids)->_drop()->countErrors()){
+		return $this->_get($ids)->_drop();
+	}
+
+	public function _drop(){
+		if(parent::_drop()->countErrors()){
 			return $this;
 		}
 		if(is_assoc($this->_result)){
@@ -180,6 +347,11 @@ trait Content {
 		return $this;
 	}
 
+	/**
+	 * @param array $filter
+	 * @param string $path
+	 * @return bool
+	 */
 	public function _skel($filter = null,$path = null){
 		if(is_null($filter)){
 			$filter = config('filters',$this->_('type'));
@@ -196,6 +368,9 @@ trait Content {
 		return $result;
 	}
 
+	/**
+	 * @return $this
+	 */
 	private function prepareSource(){
 		if(!is_null($this->source)){
 			return $this;
@@ -206,6 +381,11 @@ trait Content {
 		}
 		return $this->processSource();
 	}
+
+	/**
+	 * @param array $filter
+	 * @return $this
+	 */
 	private function parse($filter){
 		$filter = explode('/',$filter);
 		switch(true){
@@ -233,4 +413,12 @@ trait Content {
 				return $this;
 		}
 	}
+}
+
+/**
+ * @param string $class
+ * @return Singleton|Shell|Controller|Content
+ */
+function _getInstance($class){
+	return call_user_func(array($class,'_getInstance'));
 }

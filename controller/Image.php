@@ -1,9 +1,10 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class Image {
-	use Content;
-
-	private function processSource(){
+class Image extends Content {
+	/**
+	 * @return $this
+	 */
+	protected function processSource(){
 		$fileInfo = finfo_open(FILEINFO_MIME);
 		if(!preg_match(':^image/(jpeg|png|gif);\ charset\=binary$:',finfo_file($fileInfo,$this->source['tmp_name']),$matches)){
 			return $this->addError('image',0);
@@ -27,7 +28,11 @@ class Image {
 		imagesavealpha($this->source['image'],true);
 		return $this;
 	}
-	private function prepareFilter(){
+
+	/**
+	 * @return $this
+	 */
+	protected function prepareFilter(){
 		switch(true){
 			case $this->filter['w'] == "*" && $this->filter['h'] == "*":
 				$this->filter['w'] = $this->source['w'];
@@ -53,7 +58,12 @@ class Image {
 		}
 		return $this;
 	}
-	private function save($id = 0){
+
+	/**
+	 * @param int $id
+	 * @return $this
+	 */
+	protected function save($id = 0){
 		if($this->countErrors()){
 			return $this;
 		}
@@ -106,7 +116,11 @@ class Image {
 		unset($this->_result['image']);
 		return $this;
 	}
-	private function finalize(){
+
+	/**
+	 * @return $this
+	 */
+	protected function finalize(){
 		imagedestroy($this->source['image']);
 		$this->source = null;
 		return $this;

@@ -1,13 +1,14 @@
 <?php if(!defined('BASE_PATH')) include $_SERVER['DOCUMENT_ROOT'] . '/404.php';
 
-class Loader {
-	use Singleton;
-
-	private function __init(){
+class Loader extends Singleton {
+	protected function __init(){
 		Config::_getInstance()->load('Loader');
 		$this->autoload();
 	}
 
+	/**
+	 * @param string $class
+	 */
 	public function load($class){
 		switch(true){
 			case is_file(CONTROLLER_PATH . "$class.php"):
@@ -17,7 +18,7 @@ class Loader {
 				include_once SHELL_PATH . "$class.php";
 				break;
 			default:
-				include_once BASE_PATH . '/404.php';
+				error404();
 		}
 	}
 
