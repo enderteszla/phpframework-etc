@@ -156,10 +156,12 @@ abstract class Controller extends Shell {
 		switch(true){
 			case is_null($this->_result):
 			case !is_array($this->_result):
-			case is_assoc($this->_result):
 			case $n >= count($this->_result):
 			case $n < - count($this->_result):
+			case (is_assoc($this->_result) && $n != 0 && $n != -1):
 				return $this->result(null);
+			case is_assoc($this->_result):
+				return $this;
 			case $n < 0:
 				$n += count($this->_result);
 		}
@@ -168,50 +170,34 @@ abstract class Controller extends Shell {
 
 	/**
 	 * @param string|array $with
-	 * @param string $direction
 	 * @return $this
 	 */
-	public function _drop($with = array(),$direction = null){
+	public function _drop($with = array()){
 		if (empty($this->_result)) {
 			return $this;
 		}
-		if(!is_array($with)){
-			$with = array($with);
-		}
-		if(!is_assoc($with)){
-			if(is_null($direction)){
-				$direction = "down";
-			}
-			$with = array($direction => $with);
-		}
 		$ids = $this->_field('ID');
-		if(array_key_exists('down',$with)){
-			foreach($with['down'] as $k => $v){
-				if(is_numeric($k)){
-					$objectType = $v;
-					$dependencies = array();
-				} else {
-					$objectType = $k;
-					$dependencies = $v;
-				}
-				$object = _getInstance($objectType);
-				foreach(Validation::_getInstance()->getReferences($this->_('type'),$objectType) as $key){
-					$object->_get($ids,$key)->_drop($dependencies);
-				}
+		foreach(Validation::_getInstance()->getDependencies($this->_('type')) as $objectType => $keys){
+			foreach($keys as $key){
+				_getInstance($objectType)->_get($ids,$key)->_drop($with);
 			}
 		}
-		DB::_getInstance()->drop($this->_('type'), $this->_field('ID'), $this->_lang());
-		if(array_key_exists('up',$with)){
-			foreach($with['up'] as $k => $v){
-				if(is_numeric($k)){
-					$objectType = $v;
-					$dependencies = array();
-				} else {
-					$objectType = $k;
-					$dependencies = $v;
-				}
-				_getInstance($objectType)->_get($this->_getReferences($objectType))->_drop($dependencies);
+		DB::_getInstance()->drop($this->_('type'), $ids, $this->_lang());
+		$dropDependenciesQueue = array();
+		foreach(is_array($with) ? $with : array($with) as $k => $v){
+			if(is_numeric($k)){
+				$objectType = $v;
+				$dependencies = array();
+			} else {
+				$objectType = $k;
+				$dependencies = $v;
 			}
+			if($ids = $this->_getReferences($objectType)){
+				$dropDependenciesQueue[] = array('objectType' => $objectType,'dependencies' => $dependencies,'ids' => $ids);
+			}
+		}
+		foreach($dropDependenciesQueue as $dependency){
+			_getInstance($dependency['objectType'])->_get($dependency['ids'])->_drop($dependency['dependencies']);
 		}
 		return $this;
 	}
@@ -228,6 +214,20 @@ abstract class Controller extends Shell {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * @return array|null
+	 */
+	public function _first(){
+		return $this->_eq(0)->__();
+	}
+
+	/**
+	 * @return array|null
+	 */
+	public function _last(){
+		return $this->_eq(-1)->__();
 	}
 
 	/**
@@ -333,8 +333,8 @@ abstract class Content extends Controller {
 		return $this->_get($ids)->_drop();
 	}
 
-	public function _drop(){
-		if(parent::_drop()->countErrors()){
+	public function _drop($with = array()){
+		if(parent::_drop($with)->countErrors()){
 			return $this;
 		}
 		if(is_assoc($this->_result)){

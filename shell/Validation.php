@@ -278,11 +278,18 @@ class Validation extends Shell {
 	}
 
 	/**
-	 * @param string $referenceType
-	 * @param string $originType
+	 * @param string $objectType
 	 * @return array
 	 */
-	public function getReferences($referenceType,$originType){
+	public function getDependencies($objectType){
+		$dependencies = array();
+		foreach(config('rules','Validation') as $dependencyType => $dependencyRules){
+			$dependencies[$dependencyType] = preg_grep("/^{$objectType}ID\d*$/",array_keys($dependencyRules));
+		}
+		return $dependencies;
+	}
+
+	private function getReferences($referenceType,$originType){
 		return preg_grep("/^{$referenceType}ID\d*$/",array_keys(config('rules','Validation')[$originType]));
 	}
 

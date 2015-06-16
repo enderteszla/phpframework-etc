@@ -282,3 +282,30 @@ $.fn.autoResize = function(settings){
 	}
 	return this.css(css);
 };
+
+$.fn.firstParent = function(selector){
+	return this.add(this.parentsUntil(selector).last()).parent(selector);
+};
+
+$.fn.generator = function(settings){
+	if(typeof settings == "string"){
+		settings = {target: settings};
+	}
+	settings = $.extend({
+		button: ".generator-button",
+		content: ".generator-content",
+		buttonFile: ".generator-button-file",
+		file: "generator-file"
+	},settings);
+	return this.delegate(settings.button,'click',function(e){
+		$($(e.target).find(settings.content).html()).appendTo($(settings.target)).trigger('generated');
+	}).delegate(settings.buttonFile,'click',function(e){
+		$(e.target).find('.' + settings.file).on('change',function(f){
+			var generated = $($(e.target).find(settings.content).html()).appendTo($(settings.target)),
+				generatedFile = generated.find('input[type="file"]'),
+				file = $(f.target).off('change').attr('name',generatedFile.attr('name')).attr('class',generatedFile.attr('class')).replaceAll(generatedFile);
+			$("<input type=\"file\" autocomplete=\"off\" />").addClass(settings.file).prependTo($(e.target));
+			generated.trigger('generated');
+		}).trigger('click');
+	});
+};
