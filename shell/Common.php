@@ -296,24 +296,39 @@ abstract class Content extends Controller {
 	 * @return $this
 	 */
 	public function create(){
+		if(func_num_args() == 0 || !array_key_exists('tmp_name',$_FILES[config('uploadFileIndex','Default')])){
+			return error404();
+		}
 		Config::_getInstance()->load($this->_('type'));
-		switch(func_num_args()){
-			case 0:
-				return error404();
-			case 1:
-				return $this->prepareSource()->parse(input('filter'))->prepareFilter()->save(func_get_arg(0))->finalize();
-			default:
-				$result = array();
-				foreach(func_get_args() as $i => $id){
+		if(is_array($_FILES[config('uploadFileIndex','Default')]['tmp_name'])){
+			$fileNames = $_FILES[config('uploadFileIndex','Default')]['tmp_name'];
+			$ids = array_fill(0,count($fileNames),array_fill(0,func_num_args(),0));
+			$single = false;
+		} else {
+			$fileNames = array($_FILES[config('uploadFileIndex','Default')]['tmp_name']);
+			$ids = array(func_get_args());
+			$single = true;
+		}
+		$result = array();
+		if(func_num_args() == 1){
+			for($i = 0; $i < count($fileNames); $i ++){
+				$result[$i] = $this->prepareSource($fileNames[$i])->parse(input('filter'))->prepareFilter()->save($ids[$i][0])->finalize()->__();
+			}
+		} else {
+			for($i = 0; $i < count($fileNames); $i ++){
+				$result[$i] = array();
+				foreach ($ids[$i] as $j => $id) {
 					if($id == -1){
-						$result = array_merge($result,array("ID" . ($i + 1) => -1));
+						$result[$i] = array_merge($result[$i],array("ID" . ($j + 1) => -1));
 						continue;
 					}
-					$t = $this->prepareSource()->parse(input('filter') . "/$i")->prepareFilter()->save($id)->__();
-					$result = array_merge($result,array_combine(array_map(postfix(($i) ? $i + 1 : ""),array_keys($t)),array_values($t)));
+					$t = $this->prepareSource($fileNames[$i])->parse(input('filter') . "/$j")->prepareFilter()->save($id)->__();
+					$result[$i] = array_merge($result[$i],array_combine(array_map(postfix(($j) ? $j + 1 : ""),array_keys($t)),array_values($t)));
 				}
-				return $this->result($result)->finalize();
+				$this->finalize();
+			}
 		}
+		return $this->result($single ? $result[0] : array('multiple' => $result));
 	}
 
 	/**
@@ -369,13 +384,14 @@ abstract class Content extends Controller {
 	}
 
 	/**
+	 * @param string $sourceFile
 	 * @return $this
 	 */
-	private function prepareSource(){
+	private function prepareSource($sourceFile){
 		if(!is_null($this->source)){
 			return $this;
 		}
-		$this->source = array('tmp_name' => $_FILES[config('uploadFileIndex','Default')]['tmp_name']);
+		$this->source = array('tmp_name' => $sourceFile);
 		if(!is_uploaded_file($this->source['tmp_name'])){
 			return $this->addError('content',0);
 		}

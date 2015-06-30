@@ -40,6 +40,8 @@
 !/controller/UpgradeDB.php
 !/controller/User.php
 
+/favicon.ico
+
 /lang/*/*
 !/lang/*/Error.php
 !/lang/*/UpgradeDB.php
