@@ -1,0 +1,1 @@
+For now it seems to be a copy of CodeIgniter, adapted for own needs... Let's see what comes next.
